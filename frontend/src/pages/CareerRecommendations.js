@@ -30,13 +30,24 @@ const CareerRecommendations = () => {
       }
     } catch (err) {
       console.error('Error loading recommendations:', err);
-      if (err.error && typeof err.error === 'object' && err.error.message) {
-        setError(err.error.message);
+      
+      // Handle different error formats
+      let errorMessage = 'Failed to load career recommendations. Please add skills to your profile.';
+      
+      if (err.error) {
+        if (typeof err.error === 'string') {
+          errorMessage = err.error;
+        } else if (typeof err.error === 'object' && err.error.message) {
+          errorMessage = err.error.message;
+          if (err.error.suggestions) {
+            errorMessage += '. ' + err.error.suggestions;
+          }
+        }
       } else if (err.message) {
-        setError(err.message);
-      } else {
-        setError('Failed to load career recommendations. Please add skills to your profile.');
+        errorMessage = err.message;
       }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

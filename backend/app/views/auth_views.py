@@ -2,10 +2,12 @@ from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.controllers import AuthController
 from app.utils import success_response, error_response
+from app import limiter
 
 auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/register', methods=['POST'])
+@limiter.limit("10 per minute")
 def register():
     """Register a new user"""
     data = request.get_json()
@@ -21,6 +23,7 @@ def register():
         return error_response(result, status)
 
 @auth_bp.route('/login', methods=['POST'])
+@limiter.limit("10 per minute")
 def login():
     """Login user and return JWT tokens"""
     data = request.get_json()
@@ -37,6 +40,7 @@ def login():
 
 @auth_bp.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
+@limiter.limit("20 per minute")
 def refresh():
     """Refresh access token using refresh token"""
     user_id = get_jwt_identity()
@@ -50,6 +54,7 @@ def refresh():
 
 @auth_bp.route('/me', methods=['GET'])
 @jwt_required()
+@limiter.limit("60 per minute")
 def get_current_user():
     """Get current authenticated user info"""
     from app.models import User

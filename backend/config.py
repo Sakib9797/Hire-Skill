@@ -16,6 +16,22 @@ class Config:
     
     # CORS
     CORS_HEADERS = 'Content-Type'
+    
+    # Rate Limiting Configuration
+    RATELIMIT_STORAGE_URI = os.environ.get('RATELIMIT_STORAGE_URI') or 'memory://'
+    RATELIMIT_STRATEGY = 'fixed-window'
+    RATELIMIT_DEFAULT = "100 per minute"
+    RATELIMIT_HEADERS_ENABLED = True
+    
+    # Caching Configuration
+    CACHE_TYPE = os.environ.get('CACHE_TYPE') or 'simple'
+    CACHE_DEFAULT_TIMEOUT = int(os.environ.get('CACHE_DEFAULT_TIMEOUT', 300))
+    CACHE_REDIS_URL = os.environ.get('CACHE_REDIS_URL') or None
+    
+    # Custom Rate Limits
+    RATELIMIT_AI_GENERATION = os.environ.get('RATELIMIT_AI_GENERATION') or "5 per minute"
+    RATELIMIT_JOB_SEARCH = os.environ.get('RATELIMIT_JOB_SEARCH') or "30 per minute"
+    RATELIMIT_CAREER_RECOMMEND = os.environ.get('RATELIMIT_CAREER_RECOMMEND') or "10 per minute"
 
 class DevelopmentConfig(Config):
     """Development configuration"""

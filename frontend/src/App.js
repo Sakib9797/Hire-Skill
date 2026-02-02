@@ -8,6 +8,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import CareerRecommendations from './pages/CareerRecommendations';
+import ResumeGenerator from './pages/ResumeGenerator';
+import CoverLetterGenerator from './pages/CoverLetterGenerator';
+import JobSearch from './pages/JobSearch';
 import './styles/index.css';
 
 function App() {
@@ -32,6 +35,30 @@ function App() {
               element={
                 <PrivateRoute>
                   <CareerRecommendations />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/resume-generator"
+              element={
+                <PrivateRoute>
+                  <ResumeGenerator />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/cover-letter-generator"
+              element={
+                <PrivateRoute>
+                  <CoverLetterGenerator />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/job-search"
+              element={
+                <PrivateRoute>
+                  <JobSearch />
                 </PrivateRoute>
               }
             />

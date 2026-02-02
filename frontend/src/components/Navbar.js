@@ -40,6 +40,24 @@ const Navbar = () => {
         >
           🤖 Career AI
         </button>
+        <button 
+          className="nav-link" 
+          onClick={() => navigate('/resume-generator')}
+        >
+          📄 Resume
+        </button>
+        <button 
+          className="nav-link" 
+          onClick={() => navigate('/cover-letter-generator')}
+        >
+          ✉️ Cover Letter
+        </button>
+        <button 
+          className="nav-link" 
+          onClick={() => navigate('/job-search')}
+        >
+          🔍 Jobs
+        </button>
       </div>
       
       <div className="navbar-menu">

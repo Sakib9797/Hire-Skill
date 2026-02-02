@@ -3,16 +3,19 @@ Career Recommendation API Views
 Endpoints for AI-powered career path recommendations
 """
 
-from flask import Blueprint, request
+from flask import Blueprint, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.controllers.career_controller import CareerController
 from app.utils import success_response, error_response
+from app import limiter, cache
 
 career_bp = Blueprint('career', __name__)
 
 
 @career_bp.route('/recommend', methods=['GET'])
 @jwt_required()
+@limiter.limit(lambda: current_app.config.get('RATELIMIT_CAREER_RECOMMEND', "10 per minute"))
+@cache.cached(timeout=300, key_prefix=lambda: f"career_recommend_{get_jwt_identity()}")
 def get_recommendations():
     """
     Get AI-powered career recommendations for authenticated user
@@ -44,6 +47,8 @@ def get_recommendations():
 
 @career_bp.route('/skill-gap/<string:career_role>', methods=['GET'])
 @jwt_required()
+@limiter.limit(lambda: current_app.config.get('RATELIMIT_CAREER_RECOMMEND', "10 per minute"))
+@cache.cached(timeout=300, key_prefix=lambda: f"skill_gap_{get_jwt_identity()}_{career_role}")
 def get_skill_gap(career_role):
     """
     Get detailed skill gap analysis for a specific career
@@ -70,6 +75,8 @@ def get_skill_gap(career_role):
 
 
 @career_bp.route('/careers', methods=['GET'])
+@limiter.limit("60 per minute")
+@cache.cached(timeout=600, key_prefix="all_careers")
 def get_all_careers():
     """
     Get list of all available career paths
@@ -90,6 +97,8 @@ def get_all_careers():
 
 
 @career_bp.route('/careers/<string:role_name>', methods=['GET'])
+@limiter.limit("60 per minute")
+@cache.cached(timeout=600, key_prefix=lambda: f"career_details_{role_name}")
 def get_career_details(role_name):
     """
     Get detailed information about a specific career
@@ -111,6 +120,8 @@ def get_career_details(role_name):
 
 
 @career_bp.route('/skills', methods=['GET'])
+@limiter.limit("60 per minute")
+@cache.cached(timeout=600, key_prefix="available_skills")
 def get_available_skills():
     """
     Get list of all skills across careers
@@ -131,6 +142,7 @@ def get_available_skills():
 
 
 @career_bp.route('/health', methods=['GET'])
+@limiter.exempt
 def career_health_check():
     """
     Health check endpoint for career recommendation service

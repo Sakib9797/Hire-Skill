@@ -24,11 +24,27 @@ api.interceptors.request.use(
   }
 );
 
-// Handle token refresh
+// Handle token refresh and rate limiting
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    // Handle rate limit errors (429)
+    if (error.response?.status === 429) {
+      const retryAfter = error.response.headers['retry-after'] || 60;
+      const errorMessage = error.response.data?.message || 'Too many requests. Please try again later.';
+      
+      console.warn(`Rate limit exceeded. Retry after ${retryAfter} seconds.`);
+      
+      // Create a more informative error
+      const rateLimitError = new Error(errorMessage);
+      rateLimitError.isRateLimit = true;
+      rateLimitError.retryAfter = parseInt(retryAfter);
+      rateLimitError.status = 429;
+      
+      return Promise.reject(rateLimitError);
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;

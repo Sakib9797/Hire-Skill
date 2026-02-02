@@ -2,11 +2,14 @@ from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app.controllers import UserController
 from app.utils import success_response, error_response, role_required
+from app import limiter, cache
 
 user_bp = Blueprint('users', __name__)
 
 @user_bp.route('/profile', methods=['GET'])
 @jwt_required()
+@limiter.limit("60 per minute")
+@cache.cached(timeout=60, key_prefix=lambda: f"profile_{get_jwt_identity()}")
 def get_profile():
     """Get current user's profile"""
     user_id = get_jwt_identity()
@@ -20,6 +23,7 @@ def get_profile():
 
 @user_bp.route('/profile', methods=['PUT', 'PATCH'])
 @jwt_required()
+@limiter.limit("30 per minute")
 def update_profile():
     """Update current user's profile"""
     user_id = get_jwt_identity()
@@ -37,6 +41,7 @@ def update_profile():
 
 @user_bp.route('/profile/theme', methods=['PUT'])
 @jwt_required()
+@limiter.limit("20 per minute")
 def update_theme():
     """Update user theme preference"""
     user_id = get_jwt_identity()
@@ -58,6 +63,7 @@ def update_theme():
 @user_bp.route('/', methods=['GET'])
 @jwt_required()
 @role_required('admin')
+@limiter.limit("30 per minute")
 def get_users():
     """Get all users (admin only)"""
     page = request.args.get('page', 1, type=int)
@@ -74,6 +80,8 @@ def get_users():
 @user_bp.route('/<int:user_id>', methods=['GET'])
 @jwt_required()
 @role_required('admin')
+@limiter.limit("60 per minute")
+@cache.cached(timeout=60, key_prefix=lambda: f"user_{user_id}")
 def get_user_by_id(user_id):
     """Get user by ID (admin only)"""
     success, result, status = UserController.get_user_profile(user_id)
