@@ -1,5 +1,9 @@
 # Root .gitignore for HireSkill project
 
+# Documentation files (exclude all .md files except README.md)
+*.md
+!README.md
+
 # Backend (Python/Flask)
 backend/__pycache__/
 backend/*.py[cod]
@@ -52,10 +56,19 @@ Desktop.ini
 *.log
 logs/
 
-# Environment variables
+# Environment variables and sensitive data
 .env
 .env.local
 .env.production
+.env.*
+!.env.example
+*.key
+*.pem
+secrets.json
+credentials.json
+
+# Configuration files with sensitive data (uncomment if needed)
+# backend/config.py
 
 # Database
 *.db
