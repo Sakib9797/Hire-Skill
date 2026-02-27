@@ -20,7 +20,6 @@ document_bp = Blueprint('document', __name__)
 @document_bp.route('/resume/generate', methods=['POST'])
 @jwt_required()
 @limiter.limit(lambda: current_app.config.get('RATELIMIT_AI_GENERATION', "5 per minute"))
-@cache.cached(timeout=300, key_prefix=lambda: f"resume_generate_{get_jwt_identity()}")
 def generate_resume():
     """
     Generate a new ATS-compliant resume
@@ -165,7 +164,6 @@ def delete_resume(resume_id):
 @document_bp.route('/cover-letter/generate', methods=['POST'])
 @jwt_required()
 @limiter.limit(lambda: current_app.config.get('RATELIMIT_AI_GENERATION', "5 per minute"))
-@cache.cached(timeout=300, key_prefix=lambda: f"cover_letter_generate_{get_jwt_identity()}")
 def generate_cover_letter():
     """
     Generate a new cover letter
@@ -222,7 +220,6 @@ def generate_cover_letter():
 @document_bp.route('/cover-letter/generate-custom', methods=['POST'])
 @jwt_required()
 @limiter.limit(lambda: current_app.config.get('RATELIMIT_AI_GENERATION', "5 per minute"))
-@cache.cached(timeout=300, key_prefix=lambda: f"cover_letter_custom_{get_jwt_identity()}")
 def generate_custom_cover_letter():
     """
     Generate cover letter with custom prompt
@@ -413,7 +410,6 @@ def parse_cv():
 @document_bp.route('/resume/generate-ats', methods=['POST'])
 @jwt_required()
 @limiter.limit(lambda: current_app.config.get('RATELIMIT_AI_GENERATION', "5 per minute"))
-@cache.cached(timeout=300, key_prefix=lambda: f"ats_resume_{get_jwt_identity()}")
 def generate_ats_resume():
     """
     Generate ATS-optimized resume

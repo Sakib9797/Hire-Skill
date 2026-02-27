@@ -295,7 +295,7 @@ class DocumentController:
             
             if not success:
                 # Fallback to mock cover letter if LLM fails
-                print(f"LLM generation failed: {error_msg}. Using mock cover letter.")
+                logger.warning('LLM generation failed: %s. Using mock cover letter.', error_msg)
                 content = CoverLetterGenerator.generate_mock_cover_letter(user_data, job_details)
             
             # Create title

@@ -15,7 +15,7 @@ def _require_secret(key: str, default: str = '') -> str:
 
 class Config:
     """Base configuration"""
-    SECRET_KEY = _require_secret('JWT_SECRET_KEY', 'change-me-in-production')
+    SECRET_KEY = _require_secret('FLASK_SECRET_KEY', 'flask-dev-secret')
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'postgresql://localhost/hireskill_db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
