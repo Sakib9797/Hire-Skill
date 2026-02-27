@@ -6,7 +6,10 @@ Produces clean, professional, single-column format optimized for ATS parsing
 
 import os
 import json
+import logging
 import requests
+
+logger = logging.getLogger(__name__)
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 from app.utils.keyword_extractor import KeywordExtractor
@@ -69,7 +72,7 @@ class ATSResumeGenerator:
             is_valid, errors = JSONSchemaValidator.validate_resume(resume_data)
             
             if not is_valid:
-                print(f"Resume validation errors: {errors}")
+                logger.warning('Resume validation errors: %s', errors)
                 # Try to fix common issues
                 resume_data = ATSResumeGenerator._fix_common_issues(resume_data)
                 is_valid, errors = JSONSchemaValidator.validate_resume(resume_data)
@@ -83,9 +86,7 @@ class ATSResumeGenerator:
             return True, resume_data, ""
             
         except Exception as e:
-            import traceback
-            print(f"Error in generate_ats_resume: {str(e)}")
-            print(traceback.format_exc())
+            logger.exception('Error in generate_ats_resume: %s', e)
             return False, {}, f"Error generating resume: {str(e)}"
     
     @staticmethod
@@ -109,7 +110,7 @@ class ATSResumeGenerator:
                     return ATSResumeGenerator._call_ollama_api(prompt)
                     
             except Exception as e:
-                print(f"LLM API call attempt {attempt + 1} failed: {str(e)}")
+                logger.warning('LLM API call attempt %d failed: %s', attempt + 1, e)
                 if attempt == max_retries - 1:
                     raise
         

@@ -3,7 +3,10 @@ Career Recommendation API Views
 Endpoints for AI-powered career path recommendations
 """
 
+import logging
 from flask import Blueprint, request, current_app
+
+logger = logging.getLogger(__name__)
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.controllers.career_controller import CareerController
 from app.utils import success_response, error_response
@@ -217,7 +220,7 @@ def get_career_path_graph():
             200
         )
     except Exception as exc:
-        import traceback; traceback.print_exc()
+        logger.exception('Error building graph: %s', exc)
         return error_response(f'Error building graph: {str(exc)}', 500)
 
 

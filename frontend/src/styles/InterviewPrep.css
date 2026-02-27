@@ -20,8 +20,6 @@
 }
 .card h2 { font-size: 1.3rem; font-weight: 700; color: #1e293b; margin-bottom: 20px; }
 
-.interview-form { }
-
 .form-group         { margin-bottom: 18px; }
 .form-group label   { display: block; font-weight: 600; color: #374151; margin-bottom: 6px; font-size: 0.9rem; }
 .optional           { color: #94a3b8; font-weight: 400; font-size: 0.85rem; }
@@ -62,7 +60,6 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Questions */
-.questions-section { }
 .questions-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 12px;
@@ -131,6 +128,33 @@
 .model-answer strong { display: block; margin-bottom: 6px; }
 .model-answer p { margin: 0; line-height: 1.6; }
 
+.question-source {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed #e2e8f0;
+  font-size: 0.78rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+.questions-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.q-source-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.q-source-badge.llm       { background: #dbeafe; color: #1e40af; }
+.q-source-badge.template   { background: #fef3c7; color: #92400e; }
+
 .prep-tips { margin-top: 4px; }
 .prep-tips h3  { font-size: 1rem; font-weight: 700; color: #1e293b; margin-bottom: 10px; }
 .prep-tips ul  { margin: 0; padding-left: 18px; }
@@ -178,6 +202,10 @@
 [data-theme='dark'] .btn-show-answer     { background: #334155; color: #94a3b8; }
 [data-theme='dark'] .btn-show-answer:hover { background: #475569; }
 [data-theme='dark'] .model-answer        { background: #2e1065; color: #d8b4fe; }
+
+[data-theme='dark'] .question-source     { color: #64748b; border-color: #334155; }
+[data-theme='dark'] .q-source-badge.llm      { background: #1e3a5f; color: #93c5fd; }
+[data-theme='dark'] .q-source-badge.template  { background: #422006; color: #fde68a; }
 
 [data-theme='dark'] .prep-tips h3        { color: #f1f5f9; }
 [data-theme='dark'] .prep-tips li        { color: #94a3b8; }

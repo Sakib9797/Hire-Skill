@@ -1,7 +1,7 @@
 """
 Job Model
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from app import db
 
 class Job(db.Model):
@@ -25,12 +25,12 @@ class Job(db.Model):
     source = db.Column(db.String(100))  # LinkedIn, Indeed, etc.
     source_url = db.Column(db.String(500))
     company_logo = db.Column(db.String(500))
-    posted_date = db.Column(db.DateTime, default=datetime.utcnow)
+    posted_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     application_deadline = db.Column(db.DateTime)
     is_active = db.Column(db.Boolean, default=True)
     embedding = db.Column(db.LargeBinary)  # Store job embedding for similarity
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     def to_dict(self):
         """Convert job to dictionary"""
@@ -75,8 +75,8 @@ class JobApplication(db.Model):
     resume_id = db.Column(db.Integer, db.ForeignKey('resumes.id'))
     cover_letter_id = db.Column(db.Integer, db.ForeignKey('cover_letters.id'))
     match_score = db.Column(db.Float)  # Relevance score
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships
     user = db.relationship('User', backref='job_applications')

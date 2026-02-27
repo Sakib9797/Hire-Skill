@@ -150,7 +150,6 @@
 .btn-secondary:hover { background: #e2e8f0; }
 
 /* Legend */
-.cp-legend { }
 .cp-legend-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
 .cp-legend-header h3 { font-size: 1rem; font-weight: 700; color: #1e293b; margin: 0; }
 .cp-legend-hint     { font-size: 0.78rem; color: #94a3b8; }

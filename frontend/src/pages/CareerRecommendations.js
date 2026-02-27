@@ -205,6 +205,33 @@ const CareerRecommendations = () => {
                   )}
                 </div>
 
+                {/* Recommended Courses Section */}
+                {career.courses && career.courses.length > 0 && (
+                  <div className="courses-section">
+                    <strong>🎓 Recommended Courses to Advance Your Career:</strong>
+                    <div className="courses-grid">
+                      {career.courses.map((course, i) => (
+                        <a
+                          key={i}
+                          href={course.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="course-card"
+                        >
+                          <div className="course-card-header">
+                            <span className={`course-level level-${course.level.toLowerCase()}`}>
+                              {course.level}
+                            </span>
+                            <span className="course-platform">{course.platform}</span>
+                          </div>
+                          <h4 className="course-name">{course.name}</h4>
+                          <span className="course-link-icon">↗</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <button
                   className="btn-detail"
                   onClick={() => loadSkillGap(career.role)}

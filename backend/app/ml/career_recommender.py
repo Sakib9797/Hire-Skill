@@ -177,6 +177,7 @@ class CareerRecommender:
                     'growth_rate': career['growth_rate'],
                     'required_skills': career['required_skills'],
                     'optional_skills': career['optional_skills'],
+                    'courses': career.get('courses', []),
                     'skill_gaps': skill_gaps,
                     'reasoning': reasoning
                 })

@@ -3,7 +3,10 @@ Salary Prediction API Views
 Endpoints for the ML-powered salary estimator
 """
 
+import logging
 from flask import Blueprint, request
+
+logger = logging.getLogger(__name__)
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.utils.responses import success_response, error_response
 from app import limiter
@@ -53,7 +56,7 @@ def predict_salary():
         return success_response(result, 'Salary prediction complete', 200)
 
     except Exception as exc:
-        import traceback; traceback.print_exc()
+        logger.exception('Prediction failed: %s', exc)
         return error_response(f'Prediction failed: {str(exc)}', 500)
 
 

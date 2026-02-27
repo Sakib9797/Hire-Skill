@@ -5,9 +5,12 @@ Generates ATS-friendly personalized cover letters using LLM
 
 import os
 import json
+import logging
 import requests
+
+logger = logging.getLogger(__name__)
 from typing import Dict, Optional, Tuple
-from datetime import datetime
+from datetime import datetime, timezone
 from app.utils.ats_prompt_builder import ATSPromptBuilder
 
 
@@ -82,9 +85,7 @@ class CoverLetterGenerator:
             return True, cover_letter_text, ""
             
         except Exception as e:
-            import traceback
-            print(f"Error in generate_cover_letter: {str(e)}")
-            print(traceback.format_exc())
+            logger.exception('Error in generate_cover_letter: %s', e)
             return False, "", f"Error generating cover letter: {str(e)}"
     
     @staticmethod
@@ -99,7 +100,7 @@ class CoverLetterGenerator:
                     return CoverLetterGenerator._call_ollama_api(prompt)
                     
             except Exception as e:
-                print(f"LLM API call attempt {attempt + 1} failed: {str(e)}")
+                logger.warning('LLM API call attempt %d failed: %s', attempt + 1, e)
                 if attempt == max_retries - 1:
                     raise
         
@@ -197,7 +198,7 @@ class CoverLetterGenerator:
         company_name = job_details.get('company_name', 'Company')
         job_title = job_details.get('job_title', 'Position')
         
-        today = datetime.utcnow().strftime('%B %d, %Y')
+        today = datetime.now(timezone.utc).strftime('%B %d, %Y')
         
         experience_list = user_profile.get('experience', [])
         experience_text = ""

@@ -1,12 +1,20 @@
-from app import create_app, db
 import os
+import logging
+from app import create_app, db
 
-app = create_app(os.getenv('FLASK_ENV', 'development'))
+logger = logging.getLogger(__name__)
+
+env = os.getenv('FLASK_ENV', 'development')
+app = create_app(env)
 
 if __name__ == '__main__':
     with app.app_context():
-        # Create tables if they don't exist
         db.create_all()
-        print("Database tables created successfully!")
-    
-    app.run(host='0.0.0.0', port=5000, debug=True)
+        logger.info('Database tables created successfully!')
+
+    debug = env != 'production'
+    app.run(
+        host='0.0.0.0',
+        port=int(os.getenv('PORT', 5000)),
+        debug=debug,
+    )

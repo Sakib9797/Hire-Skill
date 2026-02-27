@@ -6,12 +6,19 @@ import '../styles/InterviewPrep.css';
 const CATEGORY_COLORS = {
   'Technical Skills':    '#4f46e5',
   'Problem-Solving':     '#0891b2',
+  'Problem Solving':     '#0891b2',
   'System Design':       '#059669',
   'Behavioral':          '#d97706',
+  'Behavioral (STAR)':   '#d97706',
   'Teamwork':            '#7c3aed',
   'Past Experience':     '#db2777',
+  'Handling Failure':    '#db2777',
   'Domain Knowledge':    '#0369a1',
   'Career Goals':        '#65a30d',
+  'Leadership':          '#b45309',
+  'Communication':       '#0d9488',
+  'Coding & Algorithms': '#6d28d9',
+  'Culture Fit':         '#e11d48',
   'General':             '#6b7280',
 };
 
@@ -23,6 +30,7 @@ const InterviewPrep = () => {
   });
   const [questions, setQuestions]     = useState([]);
   const [jobTitle, setJobTitle]       = useState('');
+  const [questionSource, setQuestionSource] = useState('');
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState('');
   const [openIdx, setOpenIdx]         = useState(null);
@@ -33,7 +41,7 @@ const InterviewPrep = () => {
     if (!form.job_title && !form.job_description) {
       setError('Please enter a job title or job description.'); return;
     }
-    setLoading(true); setError(''); setQuestions([]); setOpenIdx(null); setShowAnswers({});
+    setLoading(true); setError(''); setQuestions([]); setOpenIdx(null); setShowAnswers({}); setQuestionSource('');
     try {
       const res = await salaryService.generateInterviewQuestions({
         job_title:       form.job_title,
@@ -43,6 +51,7 @@ const InterviewPrep = () => {
       const data = res.data || res;
       setQuestions(data.questions || []);
       setJobTitle(data.job_title || form.job_title);
+      setQuestionSource(data.source || '');
     } catch (err) {
       setError(err?.data?.message || err?.message || 'Failed to generate questions. Please ensure the AI service is configured.');
     } finally {
@@ -117,7 +126,14 @@ const InterviewPrep = () => {
             <div className="questions-section">
               <div className="questions-header">
                 <h2>📋 Interview Questions for <em>{jobTitle}</em></h2>
-                <span className="q-count">{questions.length} questions</span>
+                <div className="questions-meta">
+                  <span className="q-count">{questions.length} questions</span>
+                  {questionSource && (
+                    <span className={`q-source-badge ${questionSource}`}>
+                      {questionSource === 'llm' ? '🤖 AI-Generated' : '📚 Expert Question Bank'}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="questions-tip">
@@ -154,6 +170,11 @@ const InterviewPrep = () => {
                           <div className="model-answer">
                             <strong>Model Answer:</strong>
                             <p>{q.model_answer}</p>
+                          </div>
+                        )}
+                        {q.source && (
+                          <div className="question-source">
+                            <span>📖 Source: {q.source}</span>
                           </div>
                         )}
                       </div>

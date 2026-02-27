@@ -36,12 +36,6 @@ const Navbar = () => {
         </button>
         <button 
           className="nav-link" 
-          onClick={() => navigate('/dashboard')}
-        >
-          👤 Profile
-        </button>
-        <button 
-          className="nav-link" 
           onClick={() => navigate('/career-recommendations')}
         >
           🤖 Career AI
@@ -88,8 +82,8 @@ const Navbar = () => {
           {theme === 'light' ? '🌙' : '☀️'}
         </button>
         
-        <div className="navbar-user">
-          <div className="user-avatar" title={user?.email}>
+        <div className="navbar-user" onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }} title="Go to Profile">
+          <div className="user-avatar">
             {getInitials()}
           </div>
           <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>

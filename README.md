@@ -1,333 +1,373 @@
-# 🚀 HireSkill - Talent Connection Platform
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.11+-blue?style=for-the-badge&logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/Flask-3.0-green?style=for-the-badge&logo=flask&logoColor=white" />
+  <img src="https://img.shields.io/badge/React-18-blue?style=for-the-badge&logo=react&logoColor=white" />
+  <img src="https://img.shields.io/badge/PostgreSQL-15-blue?style=for-the-badge&logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Docker-Ready-blue?style=for-the-badge&logo=docker&logoColor=white" />
+</p>
 
-> A modern, production-ready full-stack web application built with Flask and React, featuring JWT authentication, user profile management, and role-based access control.
+# HireSkill — AI-Powered Career Platform
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
-[![Flask](https://img.shields.io/badge/Flask-3.0.0-green.svg)](https://flask.palletsprojects.com/)
-[![React](https://img.shields.io/badge/React-18.2.0-blue.svg)](https://reactjs.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-12+-blue.svg)](https://www.postgresql.org/)
-[![License](https://img.shields.io/badge/License-Educational-yellow.svg)]()
+> A full-stack career management platform with AI-powered tools for job search, resume analysis, salary prediction, interview preparation, career recommendations, and more — built with Flask, React, and PostgreSQL.
 
-## 🏗️ Architecture
+---
 
-- **Backend**: Flask (Python) with MVC architecture
-- **Frontend**: React with Context API
-- **Database**: PostgreSQL with SQLAlchemy ORM
-- **Authentication**: JWT-based with bcrypt password hashing
-- **API**: RESTful endpoints
-- **Styling**: Custom CSS with theme support (light/dark mode)
+## Architecture
 
-## 📋 Features
+```
+┌──────────────────────────────────────────────────────┐
+│                    Frontend (Vercel)                  │
+│            React 18 · React Router · Context API     │
+│            Dark Mode · ErrorBoundary · SPA            │
+├──────────────────────────────────────────────────────┤
+│                   REST API (JSON)                    │
+│         CORS-locked · Security Headers · JWT         │
+├──────────────────────────────────────────────────────┤
+│              Backend (Render / Railway)               │
+│      Flask 3.0 (MVC) · Gunicorn · Python Logging    │
+│      Groq LLM · Scikit-learn ML · Web Scraping      │
+├──────────────────────────────────────────────────────┤
+│        PostgreSQL · Connection Pooling · ORM         │
+└──────────────────────────────────────────────────────┘
+```
 
-### Module 1: Authentication & User Profile
+---
 
-✅ **User Registration**
-- Email and password validation
-- Password strength requirements (8+ chars, uppercase, lowercase, number)
-- Bcrypt password hashing
-- Role selection (user, candidate, employer, admin)
+## Features
 
-✅ **User Login**
-- JWT access and refresh tokens
-- Token expiration and automatic refresh
-- Secure session management
+### 1. Authentication & User Profiles
+- JWT-based auth with access + refresh tokens and auto-refresh
+- Secure registration with email validation and password strength enforcement
+- Role-based access control (Candidate, Employer, Admin)
+- Editable profile with professional details, skills, and education
+- Profile completeness indicator
 
-✅ **User Profile Management**
-- Update personal information (name, bio, phone, location)
-- Add/remove skills and interests
-- Profile completeness tracking
-- Theme preference storage
+### 2. Multi-Source Job Search
+- **14 job sources** (9 free + 5 API-keyed) including RemoteOK, Arbeitnow, Himalayas, Landing.jobs, Karriere.at, and more
+- Real-time scraping with anti-ban measures (rotating user agents, rate limiting)
+- Keyword and location-based filtering
+- One-click job saving with application tracking
+- Source badges showing where each job was found
 
-✅ **Role-Based Access Control**
-- Different access levels for users, candidates, employers, and admins
-- Protected routes and endpoints
-- Role verification middleware
+### 3. ATS Resume Checker
+- Upload PDF resumes for instant analysis
+- Keyword match scoring against target job descriptions
+- Section-by-section feedback (experience, skills, education, formatting)
+- Role-specific suggestions powered by Groq LLM
+- Actionable improvement tips to beat applicant tracking systems
 
-✅ **Theme Support**
-- Light and dark mode toggle
-- Persistent theme preference
-- Smooth transitions and modern design
+### 4. Salary Predictor
+- ML-powered salary estimation using trained scikit-learn models
+- Predictions based on role, experience, location, and skills
+- Confidence intervals and market range comparisons
+- Visual salary range charts
 
-## 🚀 Getting Started
+### 5. Interview Preparation
+- **73-question curated bank** across 12 categories (behavioral, technical, system design, etc.)
+- LLM-generated questions tailored to specific job roles
+- Source attribution for each question (curated vs. AI-generated)
+- Category-coded color badges for easy navigation
+- 15 well-rounded questions per session (mix of curated + generated)
+
+### 6. Career Path Visualizer
+- Interactive graph visualization of career progression
+- Nodes and edges showing role transitions and skill requirements
+- Explore paths from entry-level to senior/leadership positions
+- Visual skill gap analysis
+
+### 7. Cover Letter Generator
+- AI-powered cover letters using Groq LLM (Llama 3.3 70B)
+- Tailored to specific job descriptions and your resume
+- ATS-friendly formatting
+- Professional tone with customization options
+
+### 8. Career Recommendations
+- TF-IDF-based skill matching across **16 career paths**
+- Personalized career suggestions based on your profile
+- **100+ curated courses** (6-10 per career) with direct links
+- Match percentage scores for each recommended career
+
+### 9. Dark Mode & Theming
+- System-wide light/dark mode toggle
+- Persistent theme preference stored per user
+- Smooth CSS variable transitions across all pages
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
-- Python 3.8+
-- Node.js 14+
-- PostgreSQL 12+
+- Python 3.11+
+- Node.js 18+
+- PostgreSQL 15+
 
 ### Backend Setup
 
-1. **Navigate to backend directory**
-   ```bash
-   cd backend
-   ```
+```bash
+cd backend
+python -m venv venv
 
-2. **Create virtual environment**
-   ```bash
-   python -m venv venv
-   ```
+# Windows
+.\venv\Scripts\activate
+# macOS/Linux
+source venv/bin/activate
 
-3. **Activate virtual environment**
-   - Windows:
-     ```bash
-     venv\Scripts\activate
-     ```
-   - Mac/Linux:
-     ```bash
-     source venv/bin/activate
-     ```
+pip install -r requirements.txt
 
-4. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+# Configure environment
+cp .env.example .env
+# Edit .env with your database URL, secret keys, and API keys
 
-5. **Configure environment variables**
-   - Copy `.env.example` to `.env`
-   - Update the following variables:
-     ```
-     DATABASE_URL=postgresql://your_username:your_password@localhost:5432/hireskill_db
-     JWT_SECRET_KEY=your-secret-key-here
-     ```
-
-6. **Create PostgreSQL database**
-   ```sql
-   CREATE DATABASE hireskill_db;
-   ```
-
-7. **Run the application**
-   ```bash
-   python run.py
-   ```
-   Backend will be available at `http://localhost:5000`
+python run.py
+# Backend → http://localhost:5000
+```
 
 ### Frontend Setup
 
-1. **Navigate to frontend directory**
-   ```bash
-   cd frontend
-   ```
+```bash
+cd frontend
+npm install
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+# Configure environment
+cp .env.example .env
+# Edit .env with your API URL
 
-3. **Start development server**
-   ```bash
-   npm start
-   ```
-   Frontend will be available at `http://localhost:3000`
-
-## 📁 Project Structure
-
-### Backend (MVC Architecture)
-
-```
-backend/
-├── app/
-│   ├── __init__.py           # App factory and initialization
-│   ├── models/               # Database models (Model)
-│   │   ├── __init__.py
-│   │   └── user.py          # User and UserProfile models
-│   ├── controllers/          # Business logic (Controller)
-│   │   ├── __init__.py
-│   │   ├── auth_controller.py
-│   │   └── user_controller.py
-│   ├── views/                # API routes (View)
-│   │   ├── __init__.py
-│   │   ├── auth_views.py
-│   │   └── user_views.py
-│   └── utils/                # Helper functions
-│       ├── __init__.py
-│       ├── validators.py
-│       └── responses.py
-├── config.py                 # Configuration settings
-├── run.py                    # Application entry point
-└── requirements.txt          # Python dependencies
+npm start
+# Frontend → http://localhost:3000
 ```
 
-### Frontend (Component-Based)
+### Docker Setup (Alternative)
 
-```
-frontend/
-├── public/
-│   ├── index.html
-│   └── manifest.json
-├── src/
-│   ├── components/           # Reusable components
-│   │   ├── Navbar.js
-│   │   └── PrivateRoute.js
-│   ├── pages/                # Page components
-│   │   ├── Home.js
-│   │   ├── Login.js
-│   │   ├── Register.js
-│   │   └── Dashboard.js
-│   ├── context/              # Context providers
-│   │   ├── AuthContext.js
-│   │   └── ThemeContext.js
-│   ├── services/             # API services
-│   │   ├── api.js
-│   │   ├── authService.js
-│   │   └── userService.js
-│   ├── styles/               # CSS styles
-│   │   ├── index.css
-│   │   ├── Auth.css
-│   │   └── Dashboard.css
-│   ├── App.js                # Main app component
-│   └── index.js              # Entry point
-└── package.json              # Node dependencies
+```bash
+# Start all services (backend, frontend, database)
+docker-compose up --build
 ```
 
-## 🔒 API Endpoints
+---
+
+## Project Structure
+
+```
+HireSkill/
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py              # App factory, CORS, security headers
+│   │   ├── models/                  # SQLAlchemy models
+│   │   │   ├── user.py             # User + UserProfile
+│   │   │   ├── job.py              # SavedJob + JobApplication
+│   │   │   └── document.py         # Resume + CoverLetter
+│   │   ├── controllers/            # Business logic
+│   │   │   ├── auth_controller.py  # Registration, login, JWT
+│   │   │   ├── user_controller.py  # Profile CRUD
+│   │   │   ├── job_controller.py   # Job search + save
+│   │   │   └── document_controller.py # ATS + document mgmt
+│   │   ├── views/                  # API route blueprints
+│   │   │   ├── auth_views.py       # /api/auth/*
+│   │   │   ├── user_views.py       # /api/users/*
+│   │   │   ├── job_views.py        # /api/jobs/*
+│   │   │   ├── document_views.py   # /api/documents/*
+│   │   │   ├── career_views.py     # /api/career/*
+│   │   │   └── salary_views.py     # /api/salary/*
+│   │   ├── generators/             # AI content generation
+│   │   │   ├── ats_generator.py    # ATS resume analysis
+│   │   │   ├── resume_generator.py # Resume building
+│   │   │   └── cover_letter_generator.py
+│   │   ├── services/               # External integrations
+│   │   │   └── job_scraper.py      # 14-source job scraper
+│   │   ├── ml/                     # Machine learning models
+│   │   └── utils/                  # Validators, responses
+│   ├── tests/                      # pytest test suite
+│   ├── config.py                   # Env-aware configuration
+│   ├── run.py                      # Entry point
+│   ├── Procfile                    # Gunicorn (Heroku/Railway)
+│   ├── Dockerfile                  # Multi-stage container
+│   └── requirements.txt
+├── frontend/
+│   ├── public/
+│   │   ├── favicon.ico             # Custom HireSkill icon
+│   │   ├── logo192.png / logo512.png
+│   │   └── robots.txt
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Navbar.js           # Navigation + avatar
+│   │   │   ├── PrivateRoute.js     # Auth guard
+│   │   │   └── ErrorBoundary.js    # React error boundary
+│   │   ├── pages/
+│   │   │   ├── Home.js
+│   │   │   ├── Login.js / Register.js
+│   │   │   ├── Dashboard.js
+│   │   │   ├── JobSearch.js
+│   │   │   ├── ATSChecker.js
+│   │   │   ├── SalaryPredictor.js
+│   │   │   ├── InterviewPrep.js
+│   │   │   ├── CareerPath.js
+│   │   │   ├── CoverLetter.js
+│   │   │   ├── CareerRecommendations.js
+│   │   │   └── NotFound.js         # 404 page
+│   │   ├── context/                # AuthContext, ThemeContext
+│   │   ├── services/               # API + auth + user services
+│   │   └── styles/                 # CSS per component
+│   ├── vercel.json                 # Vercel SPA config + headers
+│   ├── Dockerfile                  # Multi-stage node → nginx
+│   └── package.json
+├── docker-compose.yml              # Full-stack orchestration
+├── .github/workflows/ci.yml        # GitHub Actions CI
+├── LICENSE                         # MIT License
+└── CONTRIBUTING.md                 # Contribution guidelines
+```
+
+---
+
+## API Endpoints
 
 ### Authentication
-
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-- `POST /api/auth/refresh` - Refresh access token
-- `GET /api/auth/me` - Get current user info
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | Register new user |
+| POST | `/api/auth/login` | Login with JWT |
+| POST | `/api/auth/refresh` | Refresh access token |
+| GET | `/api/auth/me` | Get current user |
 
 ### User Profile
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/users/profile` | Get profile |
+| PUT | `/api/users/profile` | Update profile |
+| PUT | `/api/users/profile/theme` | Update theme |
+| GET | `/api/users/` | List users (admin) |
 
-- `GET /api/users/profile` - Get current user's profile
-- `PUT /api/users/profile` - Update user profile
-- `PUT /api/users/profile/theme` - Update theme preference
-- `GET /api/users/` - Get all users (admin only)
-- `GET /api/users/<id>` - Get user by ID (admin only)
+### Jobs
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/jobs/search` | Search jobs across sources |
+| POST | `/api/jobs/save` | Save a job listing |
+| GET | `/api/jobs/saved` | Get saved jobs |
+| DELETE | `/api/jobs/saved/<id>` | Remove saved job |
 
-## 🔐 Security Features
+### Documents & AI
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/documents/ats-check` | ATS resume analysis |
+| POST | `/api/documents/cover-letter` | Generate cover letter |
+| GET | `/api/documents/interview-questions` | Get interview questions |
 
-- **Password Hashing**: Bcrypt with salt rounds
-- **JWT Tokens**: Separate access and refresh tokens
-- **Token Expiration**: Access tokens expire in 1 hour, refresh tokens in 30 days
-- **Automatic Token Refresh**: Frontend automatically refreshes expired tokens
-- **Input Validation**: Server-side validation for all inputs
-- **Role-Based Access**: Decorator-based role verification
-- **CORS Protection**: Configured CORS policies
-- **SQL Injection Prevention**: SQLAlchemy ORM with parameterized queries
+### Career & Salary
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/salary/predict` | Predict salary range |
+| GET | `/api/career/paths` | Get career paths |
+| POST | `/api/career/recommend` | Get career recommendations |
 
-## 🎨 Design Features
+---
 
-- **Modern UI**: Clean, professional design inspired by top platforms
-- **Responsive Layout**: Mobile-friendly design
-- **Theme Support**: Light and dark modes with smooth transitions
-- **Loading States**: User-friendly loading indicators
-- **Error Handling**: Comprehensive error messages
-- **Form Validation**: Client and server-side validation
-- **Animations**: Smooth transitions and micro-interactions
+## Security
 
-## 🧪 Testing
+- **CORS Lockdown** — Origin whitelist via `CORS_ORIGINS` env variable
+- **Security Headers** — X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, HSTS (production)
+- **Secret Key Safety** — App refuses to start in production with default secrets
+- **Password Hashing** — Bcrypt with salt rounds
+- **JWT Tokens** — Separate access (1h) and refresh (30d) tokens with auto-refresh
+- **Input Validation** — Server-side validation on all endpoints
+- **SQL Injection Prevention** — SQLAlchemy ORM with parameterized queries
+- **DB Connection Pooling** — Pool size, overflow, timeout, and pre-ping configured
 
-### Test User Registration
+---
+
+## Testing
+
+Run the backend test suite:
+
 ```bash
-curl -X POST http://localhost:5000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "SecurePass123",
-    "first_name": "John",
-    "last_name": "Doe",
-    "role": "candidate"
-  }'
+cd backend
+pytest tests/ -v
 ```
 
-### Test User Login
+Tests cover:
+- Health endpoint availability
+- Security headers on every response
+- User registration and login flow
+- Authentication error handling
+- Interview question bank integrity
+
+---
+
+## Deployment
+
+### Frontend → Vercel
+
+1. Connect your GitHub repo to [Vercel](https://vercel.com)
+2. Set root directory to `frontend`
+3. Add environment variable: `REACT_APP_API_URL=https://your-backend.com/api`
+4. Deploy — `vercel.json` handles SPA routing and security headers
+
+### Backend → Render / Railway
+
+1. Connect your GitHub repo
+2. Set root directory to `backend`
+3. Set build command: `pip install -r requirements.txt`
+4. Set start command: `gunicorn run:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120`
+5. Add environment variables:
+   ```
+   FLASK_ENV=production
+   DATABASE_URL=postgresql://...
+   JWT_SECRET_KEY=<strong-random-key>
+   GROQ_API_KEY=<your-groq-key>
+   CORS_ORIGINS=https://your-frontend.vercel.app
+   ```
+
+### Docker (Self-hosted)
+
 ```bash
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "SecurePass123"
-  }'
+docker-compose up --build -d
+# Backend  → http://localhost:5000
+# Frontend → http://localhost:3000
+# Database → localhost:5432
 ```
 
-## 📝 Best Practices Implemented
+---
 
-1. **Password Security**
-   - Minimum 8 characters
-   - Requires uppercase, lowercase, and numbers
-   - Bcrypt hashing with salt
+## Environment Variables
 
-2. **Token Management**
-   - Short-lived access tokens (1 hour)
-   - Long-lived refresh tokens (30 days)
-   - Automatic token refresh on expiration
+### Backend (`backend/.env`)
 
-3. **Input Validation**
-   - Email format validation
-   - Password strength validation
-   - Required field validation
-   - Data sanitization
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `DATABASE_URL` | PostgreSQL connection string | Yes |
+| `JWT_SECRET_KEY` | Secret for JWT signing | Yes (production) |
+| `GROQ_API_KEY` | Groq API key for LLM features | Yes |
+| `FLASK_ENV` | `development` or `production` | No (default: development) |
+| `CORS_ORIGINS` | Comma-separated allowed origins | No (default: localhost) |
+| `PORT` | Server port | No (default: 5000) |
 
-4. **Code Organization**
-   - MVC architecture for backend
-   - Component-based architecture for frontend
-   - Separation of concerns
-   - Reusable utilities and services
+### Frontend (`frontend/.env`)
 
-5. **Error Handling**
-   - Comprehensive error messages
-   - User-friendly error display
-   - Proper HTTP status codes
-   - Graceful degradation
+| Variable | Description |
+|----------|-------------|
+| `REACT_APP_API_URL` | Backend API base URL |
 
-## 🔧 Configuration
+---
 
-### Backend Configuration
+## Tech Stack
 
-Edit `backend/.env`:
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 18, React Router, Context API, CSS3 |
+| Backend | Flask 3.0, SQLAlchemy, Flask-JWT-Extended |
+| Database | PostgreSQL 15 with connection pooling |
+| AI / ML | Groq LLM (Llama 3.3 70B), scikit-learn, TF-IDF |
+| Scraping | Requests, BeautifulSoup, rotating user agents |
+| Auth | JWT (access + refresh), Bcrypt |
+| DevOps | Docker, GitHub Actions CI, Gunicorn |
+| Deployment | Vercel (frontend), Render / Railway (backend) |
 
-```env
-FLASK_ENV=development
-DATABASE_URL=postgresql://username:password@localhost:5432/hireskill_db
-JWT_SECRET_KEY=your-secret-key
-JWT_ACCESS_TOKEN_EXPIRES=3600
-JWT_REFRESH_TOKEN_EXPIRES=2592000
-```
+---
 
-### Frontend Configuration
+## License
 
-Edit `frontend/.env`:
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
-```env
-REACT_APP_API_URL=http://localhost:5000/api
-```
+## Contributing
 
-## 🚀 Deployment
-
-### Backend Deployment
-
-1. Set `FLASK_ENV=production`
-2. Use a production WSGI server (e.g., Gunicorn)
-3. Set up PostgreSQL on production server
-4. Configure environment variables
-5. Use HTTPS for secure communication
-
-### Frontend Deployment
-
-1. Build production bundle: `npm run build`
-2. Deploy to static hosting (Netlify, Vercel, etc.)
-3. Update API URL to production endpoint
-4. Configure CORS on backend for production domain
-
-## 📄 License
-
-This project is for educational purposes.
-
-## 👥 Support
-
-For issues or questions, please create an issue in the repository.
-
-## 🎯 Future Enhancements
-
-- Email verification
-- Password reset functionality
-- Social authentication (Google, LinkedIn)
-- File upload for avatars
-- Advanced search and filtering
-- Real-time notifications
-- Job posting and application system
-- Messaging system
-- Analytics dashboard
+Contributions are welcome! Please read the [Contributing Guidelines](CONTRIBUTING.md) before submitting a pull request.

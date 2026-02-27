@@ -4,7 +4,7 @@ Generates professional resumes based on user profile and target role
 """
 
 from typing import Dict, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class ResumeGenerator:
@@ -47,7 +47,7 @@ class ResumeGenerator:
         resume = {
             'metadata': {
                 'template': template,
-                'generated_at': datetime.utcnow().isoformat(),
+                'generated_at': datetime.now(timezone.utc).isoformat(),
                 'target_role': target_role,
                 'version': 1
             },
@@ -304,7 +304,7 @@ class ResumeGenerator:
         
         # Update version
         new_resume['metadata']['version'] = current_resume['metadata'].get('version', 1) + 1
-        new_resume['metadata']['generated_at'] = datetime.utcnow().isoformat()
+        new_resume['metadata']['generated_at'] = datetime.now(timezone.utc).isoformat()
         
         # Apply updates
         for key, value in updates.items():

@@ -99,15 +99,12 @@ const Register = () => {
 
     try {
       const { confirmPassword, ...registerData } = formData;
-      console.log('Sending registration data:', registerData);
       const response = await register(registerData);
-      console.log('Registration response:', response);
       setSuccess('Registration successful! Redirecting to login...');
       setTimeout(() => {
         navigate('/login');
       }, 2000);
     } catch (err) {
-      console.error('Registration error:', err);
       const errorMsg = err.error || err.message || 'Registration failed. Please try again.';
       setError(errorMsg);
     } finally {

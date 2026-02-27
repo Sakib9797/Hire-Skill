@@ -3,13 +3,17 @@ Document Controller
 Handles business logic for resume and cover letter generation
 """
 
+import logging
+
 from app import db
+
+logger = logging.getLogger(__name__)
 from app.models import User, UserProfile, Resume, CoverLetter
 from app.generators import ResumeGenerator, CoverLetterGenerator
 from app.generators.ats_generator import ATSResumeGenerator
 from app.utils.cv_parser import CVParser
 from typing import Tuple, Dict, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class DocumentController:
@@ -67,7 +71,7 @@ class DocumentController:
             
             if not success:
                 # Fallback to mock resume if LLM fails
-                print(f"LLM generation failed: {error_msg}. Using mock resume.")
+                logger.warning('LLM generation failed: %s. Using mock resume.', error_msg)
                 resume_content = ATSResumeGenerator.generate_mock_resume(user_data, target_role)
             
             # Extract keywords if job description provided
@@ -87,7 +91,7 @@ class DocumentController:
             if target_role:
                 title = f"Resume - {target_role}"
             else:
-                title = f"Resume - {datetime.utcnow().strftime('%B %Y')}"
+                title = f"Resume - {datetime.now(timezone.utc).strftime('%B %Y')}"
             
             # Mark previous resumes as not current
             Resume.query.filter_by(user_id=user_id, is_current=True).update({'is_current': False})
@@ -116,9 +120,7 @@ class DocumentController:
             
         except Exception as e:
             db.session.rollback()
-            import traceback
-            print(f"ERROR in generate_resume: {str(e)}")
-            print(traceback.format_exc())
+            logger.exception('ERROR in generate_resume: %s', e)
             return False, f'Error generating resume: {str(e)}', 500
     
     @staticmethod
@@ -378,7 +380,7 @@ class DocumentController:
             if job_details and job_details.get('company_name'):
                 title = f"Custom Cover Letter - {job_details['company_name']}"
             else:
-                title = f"Custom Cover Letter - {datetime.utcnow().strftime('%B %Y')}"
+                title = f"Custom Cover Letter - {datetime.now(timezone.utc).strftime('%B %Y')}"
             
             # Save to database
             cover_letter = CoverLetter(
@@ -559,7 +561,7 @@ class DocumentController:
             )
             
             if not success:
-                print(f"LLM generation failed: {error_msg}. Using mock resume.")
+                logger.warning('LLM generation failed: %s. Using mock resume.', error_msg)
                 resume_content = ATSResumeGenerator.generate_mock_resume(user_data, target_role)
             
             # Use default ATS template
@@ -569,7 +571,7 @@ class DocumentController:
             if target_role:
                 title = f"ATS Resume - {target_role}"
             else:
-                title = f"ATS Resume - {datetime.utcnow().strftime('%B %Y')}"
+                title = f"ATS Resume - {datetime.now(timezone.utc).strftime('%B %Y')}"
             
             # Mark previous resumes with same title as not current
             Resume.query.filter_by(user_id=user_id, is_current=True).update({'is_current': False})
@@ -596,9 +598,7 @@ class DocumentController:
             
         except Exception as e:
             db.session.rollback()
-            import traceback
-            print(f"ERROR in generate_ats_resume: {str(e)}")
-            print(traceback.format_exc())
+            logger.exception('ERROR in generate_ats_resume: %s', e)
             return False, f'Error generating ATS resume: {str(e)}', 500
     
     @staticmethod

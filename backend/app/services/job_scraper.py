@@ -3,18 +3,30 @@ Real-Time Job Scraping Service
 ================================
 Fetches live job postings from multiple free & freemium APIs.
 
-Sources (in priority order):
-  1. JSearch via RapidAPI  - aggregates LinkedIn, Indeed, Glassdoor   (200 req/mo free)
-  2. Adzuna                - 16 countries, millions of jobs            (1000 req/mo free)
-  3. RemoteOK              - remote tech jobs                          (completely free)
-  4. The Muse              - curated tech company jobs                 (completely free)
+Sources (14 total):
+  Free (9):
+    1. RemoteOK              - remote tech jobs                          (completely free)
+    2. The Muse              - curated tech company jobs                 (completely free)
+    3. Remotive              - remote-first jobs                         (completely free)
+    4. Arbeitnow             - European + remote jobs                    (completely free)
+    5. Jobicy                - remote global jobs                        (completely free)
+    6. WeWorkRemotely        - remote programming jobs (RSS)             (completely free)
+    7. Himalayas.app         - remote tech jobs worldwide                (completely free)
+    8. Landing.jobs          - European tech jobs                        (completely free)
+    9. Karriere.at           - Austrian / DACH region jobs               (completely free)
+  Keyed (5):
+   10. JSearch via RapidAPI  - aggregates LinkedIn, Indeed, Glassdoor    (200 req/mo free)
+   11. Adzuna US             - millions of US jobs                       (1000 req/mo free)
+   12. Adzuna multi-country  - UK, AU, CA, IN, SG, DE, NL               (1000 req/mo free)
+   13. Reed.co.uk            - UK-specific jobs                          (free tier)
+   14. FindWork.dev          - developer jobs worldwide                  (free tier)
 
 Anti-ban measures built-in:
   Per-domain minimum delay between requests + random jitter
   Rotating User-Agent pool (5 real browser UAs)
   Requests Retry adapter: auto-retry on 429/5xx with exponential back-off
   In-memory TTL cache (1 hour) to drastically reduce live API calls
-  Parallel fetching capped at 2 concurrent workers
+  Free sources: 4 concurrent workers  |  Keyed sources: 2 concurrent workers
   Per-request timeout (10-15 s)
   Graceful degradation: one source failing will not kill the rest
 
@@ -30,7 +42,7 @@ import random
 import hashlib
 import logging
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from typing import List, Dict, Optional, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -51,13 +63,17 @@ _DOMAIN_DELAY: Dict[str, float] = {
     "www.arbeitnow.com":        2.0,   # European jobs, free
     "jobicy.com":               2.5,   # free remote-jobs API
     "weworkremotely.com":       3.5,   # RSS feed
+    "himalayas.app":            2.5,   # free remote tech jobs API
+    "www.themuse.com":          2.0,
+    "karriere.at":              3.0,   # Austrian job board
+    "landingjobs.com":          2.5,   # European tech
     # Key-required sources
     "api.adzuna.com":           1.5,   # multi-country; delay shared across all countries
     "jsearch.p.rapidapi.com":   1.5,
     "www.reed.co.uk":           2.0,   # UK jobs
     "findwork.dev":             1.5,   # developer jobs worldwide
 }
-_DEFAULT_DELAY = 2.0
+_DEFAULT_DELAY = 2.5
 
 # In-memory results cache (1 hour TTL)
 _cache: Dict[str, Tuple[List[Dict], float]] = {}
@@ -128,7 +144,7 @@ def _job_id(title: str, company: str, source: str) -> str:
 
 def _parse_date(val) -> datetime:
     if not val:
-        return datetime.utcnow()
+        return datetime.now(timezone.utc)
     try:
         if isinstance(val, (int, float)):
             return datetime.utcfromtimestamp(float(val))
@@ -146,7 +162,7 @@ def _parse_date(val) -> datetime:
                     continue
     except Exception:
         pass
-    return datetime.utcnow()
+    return datetime.now(timezone.utc)
 
 
 def _guess_level(title: str) -> str:
@@ -997,6 +1013,247 @@ def _fetch_adzuna_countries(query: str, limit_per_country: int = 12) -> List[Dic
     return all_jobs
 
 
+# --- Additional Free Sources ---------------------------------------------------
+
+def _fetch_himalayas(query: str, limit: int = 25) -> List[Dict]:
+    """
+    Himalayas.app free remote-jobs API.  No key required.
+    Endpoint: https://himalayas.app/jobs/api?limit=50
+    """
+    domain = "himalayas.app"
+    ck = _cache_key("himalayas", query, "remote")
+    cached = _from_cache(ck)
+    if cached is not None:
+        return cached[:limit]
+
+    _throttle(domain)
+    session = _make_session()
+    try:
+        params = {"limit": min(limit * 2, 50)}
+        resp = session.get(
+            "https://himalayas.app/jobs/api",
+            params=params,
+            timeout=15,
+        )
+        if resp.status_code != 200:
+            logger.warning("Himalayas HTTP %s", resp.status_code)
+            return []
+
+        data = resp.json()
+        items = data if isinstance(data, list) else data.get("jobs", data.get("data", []))
+
+        if query:
+            q = query.lower()
+            items = [j for j in items
+                     if q in (j.get("title") or "").lower()
+                     or q in (j.get("companyName") or j.get("company_name") or "").lower()
+                     or q in (j.get("description") or "").lower()
+                     or any(q in (t or "").lower() for t in j.get("tags", []))]
+
+        jobs = []
+        for j in items[:limit]:
+            company = j.get("companyName") or j.get("company_name") or "Unknown Company"
+            title = j.get("title") or "Unknown Position"
+            desc = j.get("description") or j.get("excerpt") or ""
+            salary_min = j.get("salaryCurrencyMin") or j.get("minSalary")
+            salary_max = j.get("salaryCurrencyMax") or j.get("maxSalary")
+            salary_str = ""
+            if salary_min and salary_max:
+                salary_str = f"${salary_min:,} - ${salary_max:,}"
+            elif salary_min:
+                salary_str = f"From ${salary_min:,}"
+
+            location_parts = []
+            for loc_key in ("locationRestrictions", "locations"):
+                locs = j.get(loc_key)
+                if isinstance(locs, list):
+                    location_parts.extend(locs)
+            location = ", ".join(location_parts[:3]) if location_parts else "Remote - Worldwide"
+
+            jobs.append({
+                "id":               _job_id(title, company, "Himalayas"),
+                "title":            title,
+                "company":          company,
+                "location":         location,
+                "work_type":        "Remote",
+                "job_type":         j.get("type") or "Full-time",
+                "experience_level": _guess_level(title),
+                "description":      desc[:2000],
+                "skills_required":  (j.get("tags") or j.get("categories") or [])[:10],
+                "salary":           salary_str,
+                "salary_min":       salary_min,
+                "salary_max":       salary_max,
+                "source":           "Himalayas",
+                "source_url":       j.get("applicationLink") or j.get("url") or "https://himalayas.app",
+                "company_logo":     j.get("companyLogo") or "",
+                "posted_date":      _parse_date(j.get("pubDate") or j.get("postedDate")),
+                "is_active":        True,
+                "requirements":     [],
+                "responsibilities": [],
+                "benefits":         [],
+            })
+
+        _to_cache(ck, jobs)
+        logger.info("Himalayas: %d jobs (query=%r)", len(jobs), query)
+        return jobs
+    except Exception as exc:
+        logger.error("Himalayas error: %s", exc)
+        return []
+
+
+def _fetch_landingjobs(query: str, limit: int = 25) -> List[Dict]:
+    """
+    Landing.jobs – European tech jobs. Free RSS/JSON feed.
+    Endpoint: https://landing.jobs/api/v1/jobs (public, no key needed)
+    Falls back to feed if API changes.
+    """
+    domain = "landingjobs.com"
+    ck = _cache_key("landingjobs", query, "europe")
+    cached = _from_cache(ck)
+    if cached is not None:
+        return cached[:limit]
+
+    _throttle(domain)
+    session = _make_session()
+    try:
+        resp = session.get(
+            "https://landing.jobs/api/v1/jobs",
+            params={"page": 1, "per_page": min(limit * 2, 50)},
+            timeout=15,
+        )
+        if resp.status_code != 200:
+            logger.warning("LandingJobs HTTP %s", resp.status_code)
+            return []
+
+        data = resp.json()
+        items = data if isinstance(data, list) else data.get("jobs", data.get("data", []))
+        if not isinstance(items, list):
+            return []
+
+        if query:
+            q = query.lower()
+            items = [j for j in items
+                     if q in (j.get("title") or "").lower()
+                     or q in (j.get("company_name") or j.get("company", {}).get("name", "")).lower()
+                     or q in (j.get("description") or "").lower()
+                     or any(q in (t or "").lower() for t in j.get("tags", []))]
+
+        jobs = []
+        for j in items[:limit]:
+            company = j.get("company_name") or j.get("company", {}).get("name", "") or "Unknown Company"
+            title = j.get("title") or "Unknown Position"
+            city = j.get("city") or ""
+            country = j.get("country") or ""
+            location = f"{city}, {country}".strip(", ") if city or country else "Europe"
+            work_type = "Remote" if j.get("remote") else ("Hybrid" if j.get("hybrid") else "On-site")
+            salary_str = j.get("salary") or ""
+            desc = j.get("description") or j.get("body") or ""
+
+            jobs.append({
+                "id":               _job_id(title, company, "LandingJobs"),
+                "title":            title,
+                "company":          company,
+                "location":         location,
+                "work_type":        work_type,
+                "job_type":         j.get("type") or "Full-time",
+                "experience_level": _guess_level(title),
+                "description":      desc[:2000],
+                "skills_required":  (j.get("tags") or j.get("skills") or [])[:10],
+                "salary":           salary_str,
+                "salary_min":       None,
+                "salary_max":       None,
+                "source":           "Landing.jobs",
+                "source_url":       j.get("url") or j.get("apply_url") or "https://landing.jobs",
+                "company_logo":     j.get("company_logo") or "",
+                "posted_date":      _parse_date(j.get("published_at") or j.get("created_at")),
+                "is_active":        True,
+                "requirements":     [],
+                "responsibilities": [],
+                "benefits":         [],
+            })
+
+        _to_cache(ck, jobs)
+        logger.info("LandingJobs: %d jobs (query=%r)", len(jobs), query)
+        return jobs
+    except Exception as exc:
+        logger.error("LandingJobs error: %s", exc)
+        return []
+
+
+def _fetch_karriere_at(query: str, limit: int = 20) -> List[Dict]:
+    """
+    Karriere.at – Austrian / DACH job board, public search endpoint.
+    Uses the public JSON search API (no API key required for basic listings).
+    """
+    domain = "karriere.at"
+    ck = _cache_key("karriere_at", query, "austria")
+    cached = _from_cache(ck)
+    if cached is not None:
+        return cached[:limit]
+
+    _throttle(domain)
+    session = _make_session()
+    try:
+        params = {"keywords": query or "developer", "page": 1}
+        resp = session.get(
+            "https://www.karriere.at/api/jobs",
+            params=params,
+            timeout=15,
+        )
+        if resp.status_code != 200:
+            logger.warning("Karriere.at HTTP %s", resp.status_code)
+            return []
+
+        data = resp.json()
+        items = data if isinstance(data, list) else data.get("jobs", data.get("results", data.get("data", [])))
+        if not isinstance(items, list):
+            return []
+
+        if query:
+            q = query.lower()
+            items = [j for j in items
+                     if q in (j.get("title") or j.get("name") or "").lower()
+                     or q in (j.get("company") or j.get("companyName") or "").lower()
+                     or q in (j.get("description") or "").lower()]
+
+        jobs = []
+        for j in items[:limit]:
+            company = j.get("company") or j.get("companyName") or "Unknown Company"
+            title = j.get("title") or j.get("name") or "Unknown Position"
+            location = j.get("location") or j.get("city") or "Austria"
+            desc = j.get("description") or j.get("snippet") or ""
+
+            jobs.append({
+                "id":               _job_id(title, company, "Karriere.at"),
+                "title":            title,
+                "company":          company,
+                "location":         location,
+                "work_type":        "Remote" if "remote" in (j.get("workModel") or "").lower() else "On-site",
+                "job_type":         j.get("employmentType") or "Full-time",
+                "experience_level": _guess_level(title),
+                "description":      desc[:2000],
+                "skills_required":  _extract_skills(desc),
+                "salary":           j.get("salary") or "",
+                "salary_min":       None,
+                "salary_max":       None,
+                "source":           "Karriere.at",
+                "source_url":       j.get("url") or j.get("link") or "https://www.karriere.at",
+                "company_logo":     j.get("logo") or "",
+                "posted_date":      _parse_date(j.get("date") or j.get("publishedAt")),
+                "is_active":        True,
+                "requirements":     [],
+                "responsibilities": [],
+                "benefits":         [],
+            })
+
+        _to_cache(ck, jobs)
+        logger.info("Karriere.at: %d jobs (query=%r)", len(jobs), query)
+        return jobs
+    except Exception as exc:
+        logger.error("Karriere.at error: %s", exc)
+        return []
+
+
 # --- Public API ---------------------------------------------------------------
 
 class JobScraper:
@@ -1013,7 +1270,7 @@ class JobScraper:
         Fetch live jobs from all configured sources.
 
         Anti-ban strategy:
-          - Free no-key sources (6) run in parallel with max 3 workers.
+          - Free no-key sources (9) run in parallel with max 4 workers.
           - Key-required sources (5) run in a separate pool with max 2 workers.
           - Every source has its own per-domain throttle + random jitter.
           - 1-hour in-memory TTL cache drastically reduces live calls.
@@ -1023,7 +1280,9 @@ class JobScraper:
         Sources by region:
           Free  : RemoteOK (global remote), TheMuse (US/global),
                   Remotive (global remote), Arbeitnow (EU + remote),
-                  Jobicy (global remote), WeWorkRemotely (global remote)
+                  Jobicy (global remote), WeWorkRemotely (global remote),
+                  Himalayas (global remote tech), Landing.jobs (EU tech),
+                  Karriere.at (DACH region)
           Keyed : JSearch/RapidAPI (US, global via LinkedIn/Indeed),
                   Adzuna US, Adzuna multi-country (UK/AU/CA/IN/SG/DE/NL),
                   Reed.co.uk (UK), FindWork.dev (US/UK/EU/AU/Remote)
@@ -1038,6 +1297,9 @@ class JobScraper:
             (_fetch_arbeitnow,      (query, lps)),
             (_fetch_jobicy,         (query, lps)),
             (_fetch_weworkremotely, (query, min(lps, 20))),
+            (_fetch_himalayas,     (query, lps)),
+            (_fetch_landingjobs,   (query, lps)),
+            (_fetch_karriere_at,   (query, min(lps, 20))),
         ]
 
         # Group 2 — key-required, parallel (2 workers, lower quota pressure)
@@ -1070,7 +1332,7 @@ class JobScraper:
             except Exception as tex:
                 logger.warning("Source pool timed out, using partial results: %s", tex)
 
-        with ThreadPoolExecutor(max_workers=3) as pool:
+        with ThreadPoolExecutor(max_workers=4) as pool:
             _collect({pool.submit(fn, *args): fn.__name__ for fn, args in free_fetchers})
 
         with ThreadPoolExecutor(max_workers=2) as pool:

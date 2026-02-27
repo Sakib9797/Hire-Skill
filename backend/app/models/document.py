@@ -4,7 +4,7 @@ Stores generated resumes and cover letters with versioning
 """
 
 from app import db
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class Resume(db.Model):
@@ -31,8 +31,8 @@ class Resume(db.Model):
     keywords_matched = db.Column(db.JSON, nullable=True)  # Matched keywords from job description
     
     # Metadata
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships
     user = db.relationship('User', backref='resumes')
@@ -79,8 +79,8 @@ class CoverLetter(db.Model):
     
     # Metadata
     tone = db.Column(db.String(50), default='professional')  # professional, friendly, formal
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships
     user = db.relationship('User', backref='cover_letters')

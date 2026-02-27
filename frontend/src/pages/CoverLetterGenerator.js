@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import documentService from '../services/documentService';
 import '../styles/DocumentGenerator.css';
 
 const CoverLetterGenerator = () => {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -27,6 +25,7 @@ const CoverLetterGenerator = () => {
   useEffect(() => {
     loadTones();
     loadCoverLetters();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const DEFAULT_TONES = {

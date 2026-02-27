@@ -1,8 +1,9 @@
 # Root .gitignore for HireSkill project
 
-# Documentation files (exclude all .md files except README.md)
+# Documentation files (exclude all .md files except key docs)
 *.md
 !README.md
+!CONTRIBUTING.md
 
 # Backend (Python/Flask)
 backend/__pycache__/

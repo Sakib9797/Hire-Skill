@@ -2,8 +2,11 @@
 Job Controller
 Business logic for job search and matching
 """
+import logging
 from typing import Dict, Tuple, List, Optional
-from datetime import datetime
+
+logger = logging.getLogger(__name__)
+from datetime import datetime, timezone
 from app import db
 from app.models.job import Job, JobApplication
 from app.models.user import User, UserProfile
@@ -122,9 +125,7 @@ class JobController:
             }, 200
             
         except Exception as e:
-            import traceback
-            print(f"ERROR in match_jobs: {str(e)}")
-            print(traceback.format_exc())
+            logger.exception('ERROR in match_jobs: %s', e)
             return False, f'Error matching jobs: {str(e)}', 500
     
     @staticmethod
@@ -173,7 +174,7 @@ class JobController:
             }, 200
 
         except Exception as e:
-            import traceback; traceback.print_exc()
+            logger.exception('Error searching jobs: %s', e)
             return False, f'Error searching jobs: {str(e)}', 500
 
     @staticmethod
@@ -328,7 +329,7 @@ class JobController:
                 
                 # Update existing saved application
                 existing.status = 'applied'
-                existing.applied_date = datetime.utcnow()
+                existing.applied_date = datetime.now(timezone.utc)
                 existing.resume_id = resume_id
                 existing.cover_letter_id = cover_letter_id
                 existing.match_score = match_score
@@ -341,7 +342,7 @@ class JobController:
                 user_id=user_id,
                 job_id=job_id,
                 status='applied',
-                applied_date=datetime.utcnow(),
+                applied_date=datetime.now(timezone.utc),
                 resume_id=resume_id,
                 cover_letter_id=cover_letter_id,
                 match_score=match_score
