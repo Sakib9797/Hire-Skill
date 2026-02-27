@@ -7,7 +7,7 @@ from app import limiter
 auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/register', methods=['POST'])
-@limiter.limit("10 per minute")
+@limiter.limit("30 per minute")
 def register():
     """Register a new user"""
     data = request.get_json()
@@ -23,7 +23,7 @@ def register():
         return error_response(result, status)
 
 @auth_bp.route('/login', methods=['POST'])
-@limiter.limit("10 per minute")
+@limiter.limit("30 per minute")
 def login():
     """Login user and return JWT tokens"""
     data = request.get_json()

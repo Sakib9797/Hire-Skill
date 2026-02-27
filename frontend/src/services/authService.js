@@ -7,7 +7,9 @@ const authService = {
       const response = await api.post('/auth/register', userData);
       return response.data;
     } catch (error) {
-      throw error.response?.data || { message: 'Registration failed' };
+      // error.response?.data = API error body (409, 422, 500)
+      // error.message = rate-limit or network error string
+      throw error.response?.data || { message: error.message || 'Registration failed' };
     }
   },
 
@@ -24,7 +26,7 @@ const authService = {
       
       return response.data;
     } catch (error) {
-      throw error.response?.data || { message: 'Login failed' };
+      throw error.response?.data || { message: error.message || 'Login failed' };
     }
   },
 
