@@ -13,7 +13,31 @@ from app.utils.ats_prompt_builder import ATSPromptBuilder
 
 class CoverLetterGenerator:
     """Generate ATS-friendly personalized cover letters"""
-    
+
+    # Available tones with style metadata for the /documents/tones endpoint
+    TONES = {
+        'professional': {
+            'style': 'Professional and polished',
+            'greeting': 'Dear Hiring Manager,',
+            'closing': 'Sincerely,',
+        },
+        'friendly': {
+            'style': 'Warm and conversational',
+            'greeting': 'Hello,',
+            'closing': 'Best regards,',
+        },
+        'formal': {
+            'style': 'Formal and traditional',
+            'greeting': 'Dear Sir/Madam,',
+            'closing': 'Yours faithfully,',
+        },
+        'enthusiastic': {
+            'style': 'Energetic and passionate',
+            'greeting': 'Dear Hiring Manager,',
+            'closing': 'With enthusiasm,',
+        },
+    }
+
     # LLM Configuration
     LLM_API_URL = os.environ.get('LLM_API_URL', 'http://localhost:11434/api/generate')
     LLM_MODEL = os.environ.get('LLM_MODEL', 'llama2')

@@ -10,7 +10,7 @@ const Login = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate('/dashboard', { replace: true });
+      navigate('/home', { replace: true });
     }
   }, [user, navigate]);
   const [formData, setFormData] = useState({
@@ -35,7 +35,7 @@ const Login = () => {
 
     try {
       await login(formData);
-      navigate('/dashboard');
+      navigate('/home');
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {

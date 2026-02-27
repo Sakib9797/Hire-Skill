@@ -47,12 +47,14 @@ def create_app(config_name='default'):
     from app.views.career_views import career_bp
     from app.views.document_views import document_bp
     from app.views.job_views import job_bp
-    
+    from app.views.salary_views import salary_bp
+
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(user_bp, url_prefix='/api/users')
     app.register_blueprint(career_bp, url_prefix='/api/career')
     app.register_blueprint(document_bp, url_prefix='/api/documents')
     app.register_blueprint(job_bp, url_prefix='/api/jobs')
+    app.register_blueprint(salary_bp, url_prefix='/api/salary')
     
     # Health check route
     @app.route('/api/health')

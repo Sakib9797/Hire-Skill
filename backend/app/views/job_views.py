@@ -34,13 +34,31 @@ def health_check():
 @jwt_required()
 @limiter.limit("5 per minute")
 def initialize_jobs():
-    """Initialize job database with mock data"""
-    user_id = get_jwt_identity()
-    success, message, status = JobController.initialize_jobs()
-    
+    """Legacy endpoint — real data now comes from live APIs on every search."""
+    return jsonify({'message': 'Job data is now fetched live from real APIs. No initialization needed.'}), 200
+
+
+@job_bp.route('/save-external', methods=['POST'])
+@jwt_required()
+@limiter.limit("30 per minute")
+def save_external_job():
+    """
+    Save a live-scraped job for the user.
+    The job is first upserted into the DB so it gets a stable integer ID.
+    Body: full job dict returned by /search or /match (must include source_url).
+    """
+    user_id  = int(get_jwt_identity())
+    job_data = request.get_json() or {}
+
+    if not job_data.get('source_url'):
+        return jsonify({'error': 'source_url is required'}), 400
+
+    success, data, status = JobController.upsert_and_save_job(
+        user_id=user_id, job_data=job_data
+    )
     if success:
-        return jsonify({'message': message}), status
-    return jsonify({'error': message}), status
+        return jsonify(data), status
+    return jsonify({'error': data}), status
 
 
 @job_bp.route('/match', methods=['GET'])
@@ -79,7 +97,7 @@ def match_jobs():
     limit = int(request.args.get('limit', 20))
     
     # Get matched jobs
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     success, data, status = JobController.match_jobs(
         user_id=user_id,
         filters=filters if filters else None,
@@ -142,7 +160,7 @@ def search_jobs():
 
 @job_bp.route('/<int:job_id>', methods=['GET'])
 @limiter.limit("60 per minute")
-@cache.cached(timeout=300, key_prefix=lambda: f"job_{job_id}")
+@cache.cached(timeout=300, key_prefix=lambda: f"job_{request.view_args.get('job_id')}")
 def get_job(job_id):
     """Get specific job details"""
     # Get user ID if authenticated
@@ -152,7 +170,7 @@ def get_job(job_id):
         try:
             from flask_jwt_extended import decode_token, verify_jwt_in_request
             verify_jwt_in_request(optional=True)
-            user_id = get_jwt_identity()
+            user_id = int(get_jwt_identity())
         except:
             pass
     
@@ -168,7 +186,7 @@ def get_job(job_id):
 @limiter.limit("20 per minute")
 def save_job(job_id):
     """Save job for later"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     success, data, status = JobController.save_job(
         user_id=user_id,
         job_id=job_id
@@ -190,7 +208,7 @@ def apply_to_job(job_id):
         - cover_letter_id: Optional cover letter ID
         - match_score: Optional match score
     """
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     data = request.get_json() or {}
     
     success, result, status = JobController.apply_to_job(
@@ -216,7 +234,7 @@ def get_applications():
     Query params:
         - status: Optional status filter (saved, applied, interview, rejected, accepted)
     """
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     status_filter = request.args.get('status')
     
     success, data, status = JobController.get_user_applications(
@@ -232,10 +250,10 @@ def get_applications():
 @job_bp.route('/<int:job_id>/match-explanation', methods=['GET'])
 @jwt_required()
 @limiter.limit("20 per minute")
-@cache.cached(timeout=300, key_prefix=lambda: f"match_explain_{get_jwt_identity()}_{job_id}")
+@cache.cached(timeout=300, key_prefix=lambda: f"match_explain_{get_jwt_identity()}_{request.view_args.get('job_id')}")
 def get_match_explanation(job_id):
     """Get explanation for why job was matched"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     success, data, status = JobController.get_match_explanation(
         user_id=user_id,
         job_id=job_id

@@ -5,12 +5,12 @@ load_dotenv()
 
 class Config:
     """Base configuration"""
-    SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'dev-secret-key'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'postgresql://localhost/hireskill_db'
+    SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'change-me-in-production')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'postgresql://localhost/hireskill_db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # JWT Configuration
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key'
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'change-me-in-production')
     JWT_ACCESS_TOKEN_EXPIRES = int(os.environ.get('JWT_ACCESS_TOKEN_EXPIRES', 3600))
     JWT_REFRESH_TOKEN_EXPIRES = int(os.environ.get('JWT_REFRESH_TOKEN_EXPIRES', 2592000))
     

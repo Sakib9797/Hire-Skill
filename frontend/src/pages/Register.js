@@ -10,7 +10,7 @@ const Register = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate('/dashboard', { replace: true });
+      navigate('/home', { replace: true });
     }
   }, [user, navigate]);
   const [formData, setFormData] = useState({
@@ -19,7 +19,7 @@ const Register = () => {
     confirmPassword: '',
     first_name: '',
     last_name: '',
-    role: 'user',
+    role: 'user',   // single user type — no selection needed
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -176,21 +176,6 @@ const Register = () => {
                 autoComplete="family-name"
               />
             </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="role">Account Type *</label>
-            <select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              required
-            >
-              <option value="user">User</option>
-              <option value="candidate">Candidate</option>
-              <option value="employer">Employer</option>
-            </select>
           </div>
 
           <div className="form-group">

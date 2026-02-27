@@ -74,6 +74,19 @@ api.interceptors.response.use(
       }
     }
 
+    // Handle 422 JWT errors (e.g. token identity type mismatch on old tokens) — force re-login
+    if (error.response?.status === 422) {
+      const msg = error.response.data?.msg || '';
+      if (msg.toLowerCase().includes('subject') || msg.toLowerCase().includes('token') || msg.toLowerCase().includes('jwt')) {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        // Return a never-resolving promise so no error propagates while the page redirects
+        return new Promise(() => {});
+      }
+    }
+
     return Promise.reject(error);
   }
 );

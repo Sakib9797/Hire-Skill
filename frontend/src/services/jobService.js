@@ -7,7 +7,7 @@ const jobService = {
    * Initialize job database
    */
   initializeJobs: async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     const response = await axios.post(
       `${API_URL}/jobs/initialize`,
       {},
@@ -24,7 +24,7 @@ const jobService = {
    * Get matched jobs for user
    */
   getMatchedJobs: async (filters = {}) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     const params = new URLSearchParams();
     
     if (filters.role) params.append('role', filters.role);
@@ -46,20 +46,21 @@ const jobService = {
   },
 
   /**
-   * Search jobs
+   * Search jobs (live from APIs)
    */
   searchJobs: async (query, filters = {}, limit = 50, offset = 0) => {
     const params = new URLSearchParams();
-    
-    if (query) params.append('q', query);
-    if (filters.location) params.append('location', filters.location);
-    if (filters.experience_level) params.append('experience_level', filters.experience_level);
-    if (filters.work_type) params.append('work_type', filters.work_type);
-    if (filters.job_type) params.append('job_type', filters.job_type);
-    if (filters.min_salary) params.append('min_salary', filters.min_salary);
+
+    if (query)                        params.append('q', query);
+    if (filters.location)             params.append('location', filters.location);
+    if (filters.experience_level)     params.append('experience_level', filters.experience_level);
+    if (filters.work_type)            params.append('work_type', filters.work_type);
+    if (filters.job_type)             params.append('job_type', filters.job_type);
+    if (filters.source)               params.append('source', filters.source);
+    if (filters.min_salary)           params.append('min_salary', filters.min_salary);
     params.append('limit', limit);
     params.append('offset', offset);
-    
+
     const response = await axios.get(`${API_URL}/jobs/search?${params.toString()}`);
     return response.data;
   },
@@ -68,7 +69,7 @@ const jobService = {
    * Get specific job
    */
   getJob: async (jobId) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     
     const response = await axios.get(`${API_URL}/jobs/${jobId}`, { headers });
@@ -76,10 +77,23 @@ const jobService = {
   },
 
   /**
-   * Save job for later
+   * Save a live-scraped job (upserts job to DB then creates saved record)
+   */
+  saveExternalJob: async (jobData) => {
+    const token = localStorage.getItem('accessToken');
+    const response = await axios.post(
+      `${API_URL}/jobs/save-external`,
+      jobData,
+      { headers: { 'Authorization': `Bearer ${token}` } }
+    );
+    return response.data;
+  },
+
+  /**
+   * Save DB job for later
    */
   saveJob: async (jobId) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     const response = await axios.post(
       `${API_URL}/jobs/${jobId}/save`,
       {},
@@ -96,7 +110,7 @@ const jobService = {
    * Apply to job
    */
   applyToJob: async (jobId, data = {}) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     const response = await axios.post(
       `${API_URL}/jobs/${jobId}/apply`,
       data,
@@ -113,7 +127,7 @@ const jobService = {
    * Get user applications
    */
   getUserApplications: async (status = null) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     const params = status ? `?status=${status}` : '';
     
     const response = await axios.get(
@@ -131,7 +145,7 @@ const jobService = {
    * Get match explanation
    */
   getMatchExplanation: async (jobId) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     const response = await axios.get(
       `${API_URL}/jobs/${jobId}/match-explanation`,
       {

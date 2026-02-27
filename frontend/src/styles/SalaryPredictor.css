@@ -1,0 +1,182 @@
+.salary-page {
+  min-height: 100vh;
+  background: #f8fafc;
+  padding: 80px 24px 48px;
+}
+.salary-header {
+  text-align: center;
+  margin-bottom: 36px;
+}
+.salary-header h1 { font-size: 2.2rem; font-weight: 800; color: #1e293b; margin-bottom: 8px; }
+.salary-header p  { color: #64748b; font-size: 1.05rem; }
+
+.salary-content { display: flex; gap: 28px; max-width: 1200px; margin: 0 auto; flex-wrap: wrap; }
+
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+  flex: 1;
+  min-width: 320px;
+}
+.card h2 { font-size: 1.3rem; font-weight: 700; color: #1e293b; margin-bottom: 20px; }
+
+.form-group  { margin-bottom: 18px; }
+.form-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 6px; font-size: 0.9rem; }
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #1e293b;
+  background: #fff;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.form-group input:focus,
+.form-group select:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+
+.form-row { display: flex; gap: 14px; }
+.form-row .form-group { flex: 1; }
+
+/* Skill input */
+.skill-input-group { position: relative; }
+.skill-input-wrap  { position: relative; }
+.skill-suggestions {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+  background: white; border: 1.5px solid #e2e8f0; border-radius: 8px;
+  list-style: none; padding: 6px 0; margin: 2px 0;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+.skill-suggestions li {
+  padding: 8px 14px; cursor: pointer; font-size: 0.9rem; color: #374151;
+}
+.skill-suggestions li:hover { background: #f1f5f9; }
+
+.skill-chips  { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip {
+  background: #ede9fe; color: #5b21b6; padding: 4px 10px; border-radius: 999px;
+  font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 4px;
+}
+.chip button { background: none; border: none; cursor: pointer; padding: 0; color: #7c3aed; font-size: 0.9rem; }
+.chip-boost  { background: #d1fae5; color: #065f46; }
+
+.quick-skills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
+.quick-skills span { font-size: 0.8rem; color: #9ca3af; margin-right: 4px; }
+.btn-quick {
+  background: #f1f5f9; border: none; border-radius: 6px; padding: 4px 10px;
+  font-size: 0.8rem; cursor: pointer; color: #475569;
+}
+.btn-quick:hover { background: #e2e8f0; }
+
+.alert-error {
+  background: #fef2f2; border: 1.5px solid #fca5a5; border-radius: 8px;
+  padding: 10px 14px; color: #b91c1c; font-size: 0.9rem; margin-bottom: 16px;
+}
+
+.btn-predict {
+  width: 100%; padding: 14px; background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: white; border: none; border-radius: 10px; font-size: 1rem;
+  font-weight: 700; cursor: pointer; transition: all 0.2s;
+}
+.btn-predict:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,102,241,0.35); }
+.btn-predict:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Result */
+.salary-result { flex: 1.2; }
+.predicted-salary {
+  font-size: 3rem; font-weight: 800; color: #4f46e5;
+  text-align: center; line-height: 1; margin: 8px 0;
+}
+.salary-subtitle { text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 24px; text-transform: capitalize; }
+
+.salary-range-bar {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+}
+.range-label { font-size: 0.8rem; color: #94a3b8; min-width: 70px; }
+.range-label:last-child { text-align: right; }
+.bar-track   { flex: 1; height: 14px; background: #e2e8f0; border-radius: 999px; position: relative; }
+.bar-fill    { height: 100%; background: linear-gradient(90deg, #a5b4fc, #6366f1); border-radius: 999px; transition: width 0.8s ease; }
+.bar-marker  { position: absolute; top: -6px; transform: translateX(-50%); }
+.bar-marker::after { content: '▼'; font-size: 10px; color: #4f46e5; }
+.marker-tooltip {
+  position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%);
+  background: #1e293b; color: white; padding: 2px 8px; border-radius: 4px;
+  font-size: 0.75rem; white-space: nowrap;
+}
+
+.range-cards { display: flex; gap: 12px; margin-bottom: 24px; }
+.range-card  {
+  flex: 1; text-align: center; padding: 14px; border-radius: 10px;
+}
+.range-card.low  { background: #f1f5f9; }
+.range-card.mid  { background: #ede9fe; }
+.range-card.high { background: #d1fae5; }
+.rc-label  { font-size: 0.78rem; color: #64748b; font-weight: 600; margin-bottom: 4px; }
+.rc-value  { font-size: 1.1rem; font-weight: 800; color: #1e293b; }
+
+.boost-section, .insights-section { margin-bottom: 20px; }
+.boost-section h3, .insights-section h3 { font-size: 1rem; font-weight: 700; color: #1e293b; margin-bottom: 10px; }
+
+.insight-list { margin: 0; padding-left: 18px; }
+.insight-list li { color: #475569; font-size: 0.9rem; margin-bottom: 6px; line-height: 1.5; }
+
+.meta-info { display: flex; gap: 16px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid #f1f5f9; }
+.meta-info span { font-size: 0.85rem; color: #64748b; }
+.meta-info strong { color: #1e293b; }
+
+@media (max-width: 768px) {
+  .salary-content { flex-direction: column; }
+  .form-row { flex-direction: column; }
+  .range-cards { flex-direction: column; }
+}
+
+/* ── Dark Mode ── */
+[data-theme='dark'] .salary-page        { background: #0f172a; }
+[data-theme='dark'] .salary-header h1   { color: #f1f5f9; }
+[data-theme='dark'] .salary-header p    { color: #94a3b8; }
+
+[data-theme='dark'] .card               { background: #1e293b; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+[data-theme='dark'] .card h2            { color: #f1f5f9; }
+
+[data-theme='dark'] .form-group label   { color: #cbd5e1; }
+[data-theme='dark'] .form-group input,
+[data-theme='dark'] .form-group select,
+[data-theme='dark'] .form-group textarea {
+  background: #0f172a; color: #f1f5f9;
+  border-color: #334155;
+}
+[data-theme='dark'] .form-group input:focus,
+[data-theme='dark'] .form-group select:focus { border-color: #818cf8; }
+
+[data-theme='dark'] .skill-suggestions  { background: #1e293b; border-color: #334155; }
+[data-theme='dark'] .skill-suggestions li { color: #cbd5e1; }
+[data-theme='dark'] .skill-suggestions li:hover { background: #334155; }
+
+[data-theme='dark'] .btn-quick          { background: #334155; color: #94a3b8; }
+[data-theme='dark'] .btn-quick:hover    { background: #475569; }
+[data-theme='dark'] .quick-skills span  { color: #64748b; }
+
+[data-theme='dark'] .alert-error        { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
+
+[data-theme='dark'] .salary-subtitle    { color: #94a3b8; }
+[data-theme='dark'] .range-label        { color: #64748b; }
+[data-theme='dark'] .bar-track          { background: #334155; }
+[data-theme='dark'] .marker-tooltip     { background: #f1f5f9; color: #1e293b; }
+
+[data-theme='dark'] .range-card.low     { background: #1e293b; }
+[data-theme='dark'] .range-card.mid     { background: #2e1065; }
+[data-theme='dark'] .range-card.high    { background: #052e16; }
+[data-theme='dark'] .rc-label           { color: #94a3b8; }
+[data-theme='dark'] .rc-value           { color: #f1f5f9; }
+
+[data-theme='dark'] .boost-section h3,
+[data-theme='dark'] .insights-section h3 { color: #f1f5f9; }
+[data-theme='dark'] .insight-list li   { color: #94a3b8; }
+[data-theme='dark'] .meta-info span    { color: #64748b; }
+[data-theme='dark'] .meta-info strong  { color: #cbd5e1; }
+[data-theme='dark'] .meta-info         { border-top-color: #334155; }

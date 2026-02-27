@@ -165,14 +165,7 @@ const Dashboard = () => {
                 <span className="info-label">Email</span>
                 <span className="info-value">{profile?.email}</span>
               </div>
-              <div className="info-row">
-                <span className="info-label">Role</span>
-                <span className="info-value">
-                  <span className="badge badge-primary">
-                    {profile?.role?.toUpperCase()}
-                  </span>
-                </span>
-              </div>
+
               <div className="info-row">
                 <span className="info-label">Member Since</span>
                 <span className="info-value">

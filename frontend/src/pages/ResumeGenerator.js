@@ -1,585 +1,289 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import documentService from '../services/documentService';
-import '../styles/DocumentGenerator.css';
+import '../styles/ATSChecker.css';
+
+const ROLE_SUGGESTIONS = [
+  'Software Engineer', 'Data Scientist', 'AI Engineer', 'Product Manager',
+  'UX Designer', 'DevOps Engineer', 'Data Analyst', 'Frontend Developer',
+  'Backend Developer', 'Cybersecurity Analyst',
+];
+
+const ScoreDial = ({ score }) => {
+  const radius = 70;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (score / 100) * circumference;
+  const color =
+    score >= 80 ? '#10b981' :
+    score >= 60 ? '#3b82f6' :
+    score >= 40 ? '#f59e0b' : '#ef4444';
+  return (
+    <div className="score-dial-wrapper">
+      <svg width="180" height="180" viewBox="0 0 180 180">
+        <circle cx="90" cy="90" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="14" />
+        <circle
+          cx="90" cy="90" r={radius} fill="none"
+          stroke={color} strokeWidth="14"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          transform="rotate(-90 90 90)"
+          style={{ transition: 'stroke-dashoffset 1.2s ease' }}
+        />
+        <text x="90" y="85" textAnchor="middle" fontSize="30" fontWeight="700" fill={color}>{score}</text>
+        <text x="90" y="108" textAnchor="middle" fontSize="13" fill="#6b7280">/ 100</text>
+      </svg>
+      <p className="score-label" style={{ color }}>
+        {score >= 80 ? 'Excellent' : score >= 60 ? 'Good' : score >= 40 ? 'Fair' : 'Poor'}
+      </p>
+    </div>
+  );
+};
 
 const ResumeGenerator = () => {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [resumes, setResumes] = useState([]);
-  const [templates, setTemplates] = useState({});
-  const [selectedResume, setSelectedResume] = useState(null);
-  const [showPreview, setShowPreview] = useState(false);
-  const [cvFile, setCvFile] = useState(null);
-  const [useATSMode, setUseATSMode] = useState(false);
-  const [roleRecommendations, setRoleRecommendations] = useState(null);
+  const fileInputRef = useRef(null);
+  const resultsRef  = useRef(null);
+  const [file,       setFile]       = useState(null);
+  const [targetRole, setTargetRole] = useState('');
+  const [loading,    setLoading]    = useState(false);
+  const [error,      setError]      = useState('');
+  const [result,     setResult]     = useState(null);
+  const [activeTab,  setActiveTab]  = useState('overview');
+  const [showRoleDrop, setShowRoleDrop] = useState(false);
 
-  // Form state
-  const [formData, setFormData] = useState({
-    target_role: '',
-    template: 'professional'
-  });
-
-  useEffect(() => {
-    loadTemplates();
-    loadResumes();
-  }, []);
-
-  // Load role recommendations when target_role changes
-  useEffect(() => {
-    if (formData.target_role && formData.target_role.length > 2) {
-      loadRoleRecommendations(formData.target_role);
-    } else {
-      setRoleRecommendations(null);
-    }
-  }, [formData.target_role]);
-
-  const loadTemplates = async () => {
-    try {
-      const response = await documentService.getTemplates();
-      setTemplates(response.data.templates);
-    } catch (err) {
-      console.error('Error loading templates:', err);
-    }
+  const handleFileChange = (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    if (!f.name.toLowerCase().endsWith('.pdf')) { setError('Only PDF files are supported.'); return; }
+    setFile(f); setError(''); setResult(null);
   };
 
-  const loadResumes = async () => {
-    try {
-      const response = await documentService.getResumes();
-      setResumes(response.data.resumes || []);
-    } catch (err) {
-      console.error('Error loading resumes:', err);
-    }
-  };
-
-  const loadRoleRecommendations = async (role) => {
-    try {
-      const response = await documentService.getRoleRecommendations(role);
-      setRoleRecommendations(response.data);
-    } catch (err) {
-      console.error('Error loading recommendations:', err);
-      setRoleRecommendations(null);
-    }
-  };
-
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.type !== 'application/pdf') {
-        setError('Please upload a PDF file');
-        return;
-      }
-      setCvFile(file);
-      setError('');
-    }
-  };
-
-  const handleRemoveFile = () => {
-    setCvFile(null);
-    document.getElementById('cv-file-input').value = '';
-  };
-
-  const handleGenerate = async (e) => {
+  const handleDrop = (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess('');
+    const f = e.dataTransfer.files[0];
+    if (f && f.name.toLowerCase().endsWith('.pdf')) { setFile(f); setError(''); setResult(null); }
+    else setError('Please drop a PDF file.');
+  };
 
+  const handleCheck = async () => {
+    if (!file) { setError('Please upload your resume PDF first.'); return; }
+    setLoading(true); setError(''); setResult(null);
     try {
-      let response;
-      
-      if (useATSMode || cvFile) {
-        // Generate ATS resume (with or without CV upload)
-        response = await documentService.generateATSResume(formData, cvFile);
-        setSuccess('ATS-optimized resume generated successfully!');
-      } else {
-        // Standard resume generation
-        response = await documentService.generateResume(formData);
-        setSuccess('Resume generated successfully!');
-      }
-      
-      setSelectedResume(response.data.resume);
-      setShowPreview(true);
-      loadResumes(); // Reload list
-      
-      // Reset form
-      setCvFile(null);
-      if (document.getElementById('cv-file-input')) {
-        document.getElementById('cv-file-input').value = '';
-      }
-      
+      const data = await documentService.checkATSResume(file, targetRole);
+      setResult(data.data || data);
+      setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err) {
-      console.error('Error generating resume:', err);
-      setError(err.message || 'Failed to generate resume. Please complete your profile first.');
-    } finally {
-      setLoading(false);
-    }
+      setError(err.message || 'Failed to analyse resume. Please try again.');
+    } finally { setLoading(false); }
   };
 
-  const handleViewResume = async (resumeId) => {
-    try {
-      const response = await documentService.getResume(resumeId);
-      setSelectedResume(response.data.resume);
-      setShowPreview(true);
-    } catch (err) {
-      setError('Failed to load resume');
-    }
-  };
-
-  const handleDeleteResume = async (resumeId) => {
-    if (!window.confirm('Are you sure you want to delete this resume?')) {
-      return;
-    }
-
-    try {
-      await documentService.deleteResume(resumeId);
-      setSuccess('Resume deleted successfully');
-      loadResumes();
-      if (selectedResume?.id === resumeId) {
-        setSelectedResume(null);
-        setShowPreview(false);
-      }
-    } catch (err) {
-      setError('Failed to delete resume');
-    }
-  };
-
-  const handleDownloadJSON = () => {
-    if (!selectedResume) return;
-    
-    const dataStr = JSON.stringify(selectedResume.content, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
-    const exportFileDefaultName = `resume-${selectedResume.id}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-  };
-
-  const renderResumePreview = () => {
-    if (!selectedResume || !selectedResume.content) return null;
-
-    const content = selectedResume.content;
-    const contact = content.contact || {};
-    const sections = content.sections || {};
-    const metadata = content.metadata || {};
-    const isATSResume = metadata.ats_optimized || selectedResume.template_name?.includes('ats');
-
-    return (
-      <div className="resume-preview">
-        <div className="preview-header">
-          <h2>
-            {selectedResume.title}
-            {isATSResume && <span className="badge-ats" style={{marginLeft: '10px'}}>ATS</span>}
-          </h2>
-          <div className="preview-actions">
-            <button onClick={handleDownloadJSON} className="btn-download">
-              📥 Download JSON
-            </button>
-            <button onClick={() => setShowPreview(false)} className="btn-close-preview">
-              ✕ Close
-            </button>
-          </div>
-        </div>
-
-        <div className={`resume-content ${isATSResume ? 'ats-resume' : ''}`}>
-          {/* Contact Section */}
-          <div className="resume-section">
-            <h3>{contact.full_name}</h3>
-            <div className="contact-info">
-              {isATSResume ? (
-                <>
-                  {contact.email && <span>{contact.email}</span>}
-                  {contact.phone && <span>{contact.phone}</span>}
-                  {contact.location && <span>{contact.location}</span>}
-                  {contact.linkedin && <span>{contact.linkedin}</span>}
-                  {contact.github && <span>{contact.github}</span>}
-                </>
-              ) : (
-                <>
-                  {contact.email && <span>📧 {contact.email}</span>}
-                  {contact.phone && <span>📱 {contact.phone}</span>}
-                  {contact.location && <span>📍 {contact.location}</span>}
-                  {contact.linkedin && <span>💼 {contact.linkedin}</span>}
-                  {contact.github && <span>💻 {contact.github}</span>}
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Summary */}
-          {sections.summary && (
-            <div className="resume-section">
-              <h4>Professional Summary</h4>
-              <p>{sections.summary}</p>
-            </div>
-          )}
-
-          {/* Executive Summary */}
-          {sections.executive_summary && (
-            <div className="resume-section">
-              <h4>Executive Summary</h4>
-              <p>{sections.executive_summary}</p>
-            </div>
-          )}
-
-          {/* Skills */}
-          {sections.skills && (
-            <div className="resume-section">
-              <h4>{isATSResume ? 'CORE COMPETENCIES' : 'Skills'}</h4>
-              {isATSResume ? (
-                // ATS Format: Simple comma-separated list
-                <div className="skill-tags">
-                  {[
-                    ...(sections.skills.technical || []),
-                    ...(sections.skills.tools || []),
-                    ...(sections.skills.soft || []),
-                    ...(sections.skills.other || [])
-                  ].map((skill, i) => (
-                    <span key={i} className="skill-tag">{skill}</span>
-                  ))}
-                </div>
-              ) : (
-                // Standard Format: Categorized with visual tags
-                <div className="skills-grid">
-                  {sections.skills.technical && sections.skills.technical.length > 0 && (
-                    <div className="skill-category">
-                      <strong>Technical:</strong>
-                      <div className="skill-tags">
-                        {sections.skills.technical.map((skill, i) => (
-                          <span key={i} className="skill-tag">{skill}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {sections.skills.soft && sections.skills.soft.length > 0 && (
-                    <div className="skill-category">
-                      <strong>Soft Skills:</strong>
-                      <div className="skill-tags">
-                        {sections.skills.soft.map((skill, i) => (
-                          <span key={i} className="skill-tag">{skill}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {sections.skills.other && sections.skills.other.length > 0 && (
-                    <div className="skill-category">
-                      <strong>Other:</strong>
-                      <div className="skill-tags">
-                        {sections.skills.other.map((skill, i) => (
-                          <span key={i} className="skill-tag">{skill}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Experience */}
-          {sections.experience && sections.experience.length > 0 && (
-            <div className="resume-section">
-              <h4>{isATSResume ? 'PROFESSIONAL EXPERIENCE' : 'Work Experience'}</h4>
-              {sections.experience.map((exp, i) => (
-                <div key={i} className="experience-item">
-                  <div className="exp-header">
-                    <strong>{exp.title}</strong>
-                    <span className="company-name">{exp.company}</span>
-                  </div>
-                  {exp.location && <div className="exp-location">{exp.location}</div>}
-                  {(exp.period || exp.duration) && (
-                    <div className="exp-duration">{exp.period || exp.duration}</div>
-                  )}
-                  {exp.description && Array.isArray(exp.description) && exp.description.length > 0 && (
-                    <ul className="exp-bullets">
-                      {exp.description.map((desc, j) => (
-                        <li key={j}>{desc}</li>
-                      ))}
-                    </ul>
-                  )}
-                  {exp.achievements && exp.achievements.length > 0 && (
-                    <div className="achievements">
-                      <strong>Key Achievements:</strong>
-                      <ul>
-                        {exp.achievements.map((achievement, j) => (
-                          <li key={j}>{achievement}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Education */}
-          {sections.education && sections.education.length > 0 && (
-            <div className="resume-section">
-              <h4>{isATSResume ? 'EDUCATION' : 'Education'}</h4>
-              {sections.education.map((edu, i) => (
-                <div key={i} className="education-item">
-                  <div className="edu-header">
-                    <strong>{edu.degree}</strong>
-                    {edu.year && <span className="edu-year">{edu.year}</span>}
-                  </div>
-                  <div className="edu-institution">{edu.institution}</div>
-                  {edu.location && <div className="edu-location">{edu.location}</div>}
-                  {edu.gpa && <div className="edu-gpa">GPA: {edu.gpa}</div>}
-                  {edu.honors && <div className="edu-honors">{edu.honors}</div>}
-                  {edu.details && <div className="edu-details">{edu.details}</div>}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Projects */}
-          {sections.projects && sections.projects.length > 0 && (
-            <div className="resume-section">
-              <h4>Projects</h4>
-              {sections.projects.map((proj, i) => (
-                <div key={i} className="project-item">
-                  <strong>{proj.name}</strong>
-                  <p>{proj.description}</p>
-                  {proj.technologies && proj.technologies.length > 0 && (
-                    <div className="skill-tags">
-                      {proj.technologies.map((tech, j) => (
-                        <span key={j} className="skill-tag">{tech}</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Key Achievements */}
-          {sections.key_achievements && sections.key_achievements.length > 0 && (
-            <div className="resume-section">
-              <h4>Key Achievements</h4>
-              <ul>
-                {sections.key_achievements.map((achievement, i) => (
-                  <li key={i}>{achievement}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Certifications */}
-          {sections.certifications && sections.certifications.length > 0 && (
-            <div className="resume-section">
-              <h4>Certifications</h4>
-              {sections.certifications.map((cert, i) => (
-                <div key={i} className="cert-item">
-                  <strong>{cert.name}</strong>
-                  {cert.issuer && <span> - {cert.issuer}</span>}
-                  {cert.date && <span> ({cert.date})</span>}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
+  const priorityBadge = (p) =>
+    p === 'high' ? 'badge-high' : p === 'medium' ? 'badge-medium' : 'badge-low';
+  const priorityColor = (p) =>
+    p === 'high' ? '#ef4444' : p === 'medium' ? '#f59e0b' : '#6b7280';
 
   return (
     <>
       <Navbar />
-      <div className="document-generator-container">
-        <div className="generator-layout">
-          {/* Left Panel - Generator Form */}
-          <div className="generator-panel">
-            <div className="panel-header">
-              <h1>📄 Resume Generator</h1>
-              <p>Generate professional resumes from your profile</p>
+      <div className="ats-checker-page">
+
+        {/* Hero */}
+        <div className="checker-hero">
+          <h1>ATS Resume Checker</h1>
+          <p>Instantly analyse your resume for ATS compatibility, get a score, and see exactly how to improve it.</p>
+        </div>
+
+        {/* Upload Card */}
+        <div className="checker-card upload-card">
+          <h2>Upload Your Resume</h2>
+
+          <div
+            className={`drop-zone ${file ? 'has-file' : ''}`}
+            onClick={() => fileInputRef.current.click()}
+            onDrop={handleDrop}
+            onDragOver={(e) => e.preventDefault()}
+          >
+            <input type="file" accept=".pdf" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileChange} />
+            {file ? (
+              <>
+                <span className="file-icon">ðŸ“„</span>
+                <p className="file-name">{file.name}</p>
+                <p className="file-size">{(file.size / 1024).toFixed(1)} KB</p>
+                <button className="remove-file-btn" onClick={(e) => { e.stopPropagation(); setFile(null); setResult(null); }}>Remove</button>
+              </>
+            ) : (
+              <>
+                <span className="upload-icon">â˜ï¸</span>
+                <p>Drag &amp; drop your PDF here, or <span className="browse-link">browse</span></p>
+                <p className="upload-hint">PDF only Â· Max 5 MB</p>
+              </>
+            )}
+          </div>
+
+          {/* Role selector */}
+          <div className="role-selector">
+            <label>Target Role <span className="optional">(optional but recommended)</span></label>
+            <div className="role-input-wrapper">
+              <input
+                type="text"
+                placeholder="e.g. Software Engineer, Data Scientistâ€¦"
+                value={targetRole}
+                onChange={(e) => { setTargetRole(e.target.value); setShowRoleDrop(true); }}
+                onFocus={() => setShowRoleDrop(true)}
+                onBlur={() => setTimeout(() => setShowRoleDrop(false), 150)}
+              />
+              {showRoleDrop && (
+                <ul className="role-dropdown">
+                  {ROLE_SUGGESTIONS.filter(r => r.toLowerCase().includes(targetRole.toLowerCase())).map(r => (
+                    <li key={r} onMouseDown={() => { setTargetRole(r); setShowRoleDrop(false); }}>{r}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+
+          {error && <div className="checker-error">{error}</div>}
+
+          <button className="check-btn" onClick={handleCheck} disabled={loading || !file}>
+            {loading ? <><span className="spinner" /> Analysingâ€¦</> : 'ðŸ” Check My Resume'}
+          </button>
+        </div>
+
+        {/* Results */}
+        {result && (
+          <div className="checker-results" ref={resultsRef}>
+
+            {/* Score Banner */}
+            <div className="score-banner">
+              <ScoreDial score={result.score} />
+              <div className="score-summary">
+                <h2>ATS Score: {result.score} / 100</h2>
+                <p>
+                  {result.score >= 80 ? 'Your resume is well-optimised for ATS systems. Minor tweaks can take it further.'
+                   : result.score >= 60 ? 'Your resume passes basic ATS checks but has room for improvement.'
+                   : result.score >= 40 ? 'Your resume has several ATS issues that need attention.'
+                   : 'Your resume is likely being filtered out by ATS. Significant changes needed.'}
+                </p>
+                <div className="score-meta">
+                  <span>ðŸ“„ {result.filename}</span>
+                  <span>ðŸ“ {result.word_count} words</span>
+                  {result.keyword_analysis?.role && <span>ðŸŽ¯ {result.keyword_analysis.role}</span>}
+                </div>
+              </div>
             </div>
 
-            {error && (
-              <div className="alert alert-error">
-                ⚠️ {error}
-              </div>
-            )}
+            {/* Tabs */}
+            <div className="result-tabs">
+              {['overview', 'problems', 'keywords', 'recommendations'].map(tab => (
+                <button key={tab} className={activeTab === tab ? 'active' : ''} onClick={() => setActiveTab(tab)}>
+                  {tab === 'overview' ? 'ðŸ“Š Overview'
+                   : tab === 'problems' ? `âš ï¸ Issues (${result.problems.length})`
+                   : tab === 'keywords' ? 'ðŸ”‘ Keywords'
+                   : 'ðŸ’¡ Recommendations'}
+                </button>
+              ))}
+            </div>
 
-            {success && (
-              <div className="alert alert-success">
-                ✅ {success}
-              </div>
-            )}
+            <div className="tab-content">
 
-            <form onSubmit={handleGenerate} className="generator-form">
-              <div className="form-group">
-                <label>Target Role (Optional)</label>
-                <input
-                  type="text"
-                  placeholder="e.g., Software Engineer, Data Scientist"
-                  value={formData.target_role}
-                  onChange={(e) => setFormData({...formData, target_role: e.target.value})}
-                />
-                <small>Leave empty for general resume</small>
-              </div>
-
-              {/* Role-based recommendations */}
-              {roleRecommendations && roleRecommendations.recommended && (
-                <div className="recommendation-box">
-                  <h4>💡 Recommendation for {formData.target_role}</h4>
-                  <p>{roleRecommendations.recommended.reason}</p>
-                  <div className="recommended-template">
-                    <strong>Suggested Template:</strong> {roleRecommendations.recommended.template}
+              {/* Overview */}
+              {activeTab === 'overview' && (
+                <div className="checks-grid">
+                  <h3>Format &amp; Content Checks</h3>
+                  <div className="checks-list">
+                    {[...result.passed_checks, ...result.failed_checks]
+                      .sort((a, b) => b.weight - a.weight)
+                      .map((c) => {
+                        const passed = result.passed_checks.some(p => p.key === c.key);
+                        return (
+                          <div key={c.key} className={`check-row ${passed ? 'pass' : 'fail'}`}>
+                            <span className="check-icon">{passed ? 'âœ…' : 'âŒ'}</span>
+                            <span className="check-label">{c.label}</span>
+                            <span className="check-weight">+{c.weight} pts</span>
+                          </div>
+                        );
+                      })}
                   </div>
-                  {roleRecommendations.recommended.keywords && (
-                    <div className="keywords">
-                      <strong>Key skills to highlight:</strong>
-                      <div className="skill-tags">
-                        {roleRecommendations.recommended.keywords.slice(0, 5).map((keyword, i) => (
-                          <span key={i} className="skill-tag">{keyword}</span>
-                        ))}
+                </div>
+              )}
+
+              {/* Problems */}
+              {activeTab === 'problems' && (
+                <div className="problems-list">
+                  <h3>Issues Found</h3>
+                  {result.problems.length === 0 ? (
+                    <p className="all-good">ðŸŽ‰ No major issues found!</p>
+                  ) : result.problems.map((p, i) => (
+                    <div key={i} className="problem-item">
+                      <span className="problem-icon">âš ï¸</span>
+                      <p>{p}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Keywords */}
+              {activeTab === 'keywords' && (
+                <div className="keywords-panel">
+                  {!result.keyword_analysis?.role ? (
+                    <p className="no-role-msg">Enter a target role above to see keyword analysis.</p>
+                  ) : (
+                    <>
+                      <div className="kw-stats">
+                        <div className="kw-stat"><span className="kw-num matched">{result.keyword_analysis.matched.length}</span><span>Matched</span></div>
+                        <div className="kw-stat"><span className="kw-num missing">{result.keyword_analysis.missing.length}</span><span>Missing</span></div>
+                        <div className="kw-stat"><span className="kw-num total">{result.keyword_analysis.total_role_kws}</span><span>Total for role</span></div>
                       </div>
+                      {result.keyword_analysis.matched.length > 0 && (
+                        <div className="kw-section">
+                          <h4>âœ… Matched Keywords</h4>
+                          <div className="kw-tags">{result.keyword_analysis.matched.map(k => <span key={k} className="kw-tag kw-matched">{k}</span>)}</div>
+                        </div>
+                      )}
+                      {result.keyword_analysis.missing.length > 0 && (
+                        <div className="kw-section">
+                          <h4>âŒ Missing Keywords</h4>
+                          <div className="kw-tags">{result.keyword_analysis.missing.map(k => <span key={k} className="kw-tag kw-missing">{k}</span>)}</div>
+                          <p className="kw-hint">Add these keywords naturally in your skills, experience, or summary.</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Recommendations */}
+              {activeTab === 'recommendations' && (
+                <div className="recommendations-panel">
+                  <h3>How to Improve Your Resume</h3>
+                  {result.recommendations.length > 0 && (
+                    <div className="recs-section">
+                      <h4>ðŸ”§ Fixes &amp; Improvements</h4>
+                      {result.recommendations.map((r, i) => (
+                        <div key={i} className="rec-item">
+                          <span className={`rec-badge ${priorityBadge(r.priority)}`} style={{ borderColor: priorityColor(r.priority), color: priorityColor(r.priority) }}>{r.priority}</span>
+                          <p>{r.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {result.role_additions?.length > 0 && (
+                    <div className="recs-section">
+                      <h4>ðŸŽ¯ Role-Specific Additions {targetRole && `for "${targetRole}"`}</h4>
+                      {result.role_additions.map((a, i) => (
+                        <div key={i} className="rec-item">
+                          <span className="rec-badge" style={{ borderColor: '#3b82f6', color: '#3b82f6' }}>tip</span>
+                          <p>{a}</p>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
               )}
 
-              {/* CV Upload Section */}
-              <div className="form-group cv-upload-section">
-                <label>
-                  📎 Upload Your CV (Optional)
-                  <span className="badge-ats">ATS</span>
-                </label>
-                <p className="help-text">
-                  Upload a PDF resume to extract information and generate an ATS-optimized version
-                </p>
-                
-                {!cvFile ? (
-                  <div className="file-upload-area">
-                    <input
-                      type="file"
-                      id="cv-file-input"
-                      accept=".pdf"
-                      onChange={handleFileSelect}
-                      style={{ display: 'none' }}
-                    />
-                    <label htmlFor="cv-file-input" className="file-upload-label">
-                      <span className="upload-icon">📄</span>
-                      <span>Click to upload PDF</span>
-                    </label>
-                  </div>
-                ) : (
-                  <div className="file-selected">
-                    <span className="file-icon">📄</span>
-                    <span className="file-name">{cvFile.name}</span>
-                    <button
-                      type="button"
-                      onClick={handleRemoveFile}
-                      className="btn-remove-file"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* ATS Mode Toggle */}
-              <div className="form-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={useATSMode}
-                    onChange={(e) => setUseATSMode(e.target.checked)}
-                  />
-                  <span>Generate ATS-Optimized Resume</span>
-                  <span className="badge-ats">ATS</span>
-                </label>
-                <small>
-                  Applicant Tracking System friendly format with keyword optimization
-                </small>
-              </div>
-
-              <div className="form-group">
-                <label>Template</label>
-                <select
-                  value={formData.template}
-                  onChange={(e) => setFormData({...formData, template: e.target.value})}
-                  disabled={useATSMode || cvFile}
-                >
-                  {Object.keys(templates).map(key => (
-                    <option key={key} value={key}>
-                      {key.charAt(0).toUpperCase() + key.slice(1)} - {templates[key]?.style}
-                    </option>
-                  ))}
-                </select>
-                {(useATSMode || cvFile) && (
-                  <small className="template-override">
-                    Template will be automatically selected based on role
-                  </small>
-                )}
-              </div>
-
-              <button type="submit" className="btn-generate" disabled={loading}>
-                {loading ? '⏳ Generating...' : cvFile || useATSMode ? '✨ Generate ATS Resume' : '✨ Generate Resume'}
-              </button>
-            </form>
-
-            {/* Saved Resumes List */}
-            <div className="saved-documents">
-              <h3>📂 Your Resumes ({resumes.length})</h3>
-              {resumes.length === 0 ? (
-                <p className="no-documents">No resumes yet. Generate your first one!</p>
-              ) : (
-                <div className="document-list">
-                  {resumes.map(resume => (
-                    <div key={resume.id} className="document-item">
-                      <div className="document-info">
-                        <strong>{resume.title}</strong>
-                        <small>
-                          {new Date(resume.created_at).toLocaleDateString()} • 
-                          Version {resume.version} • 
-                          {resume.template_name}
-                        </small>
-                      </div>
-                      <div className="document-actions">
-                        <button 
-                          onClick={() => handleViewResume(resume.id)}
-                          className="btn-icon"
-                          title="View"
-                        >
-                          👁️
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteResume(resume.id)}
-                          className="btn-icon btn-danger"
-                          title="Delete"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
-
-          {/* Right Panel - Preview */}
-          <div className="preview-panel">
-            {showPreview && selectedResume ? (
-              renderResumePreview()
-            ) : (
-              <div className="preview-placeholder">
-                <div className="placeholder-content">
-                  <span className="placeholder-icon">📄</span>
-                  <h3>Resume Preview</h3>
-                  <p>Generate or select a resume to see the preview</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </>
   );

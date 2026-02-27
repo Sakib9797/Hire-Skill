@@ -2,16 +2,6 @@ import api from './api';
 
 const documentService = {
   // =============== RESUME SERVICES ===============
-  
-  // Generate new resume
-  generateResume: async (data) => {
-    try {
-      const response = await api.post('/documents/resume/generate', data);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || { message: 'Failed to generate resume' };
-    }
-  },
 
   // Get all resumes
   getResumes: async (currentOnly = false) => {
@@ -106,72 +96,23 @@ const documentService = {
   },
 
   // =============== ATS & CV SERVICES ===============
-  
-  // Parse CV file
-  parseCVFile: async (file) => {
+
+  // Check ATS compatibility of an uploaded resume
+  checkATSResume: async (resumeFile, targetRole = '') => {
     try {
       const formData = new FormData();
-      formData.append('cv_file', file);
-      
-      const response = await api.post('/documents/parse-cv', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      formData.append('resume_file', resumeFile);
+      if (targetRole) formData.append('target_role', targetRole);
+      const response = await api.post('/documents/resume/check-ats', formData, {
+        headers: { 'Content-Type': undefined },
       });
       return response.data;
     } catch (error) {
-      throw error.response?.data || { message: 'Failed to parse CV file' };
-    }
-  },
-
-  // Generate ATS-optimized resume
-  generateATSResume: async (data, cvFile = null) => {
-    try {
-      if (cvFile) {
-        // Upload with file
-        const formData = new FormData();
-        formData.append('cv_file', cvFile);
-        if (data.target_role) {
-          formData.append('target_role', data.target_role);
-        }
-        
-        const response = await api.post('/documents/resume/generate-ats', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-        return response.data;
-      } else {
-        // JSON request without file
-        const response = await api.post('/documents/resume/generate-ats', data);
-        return response.data;
-      }
-    } catch (error) {
-      throw error.response?.data || { message: 'Failed to generate ATS resume' };
-    }
-  },
-
-  // Get role-based template recommendations
-  getRoleRecommendations: async (role) => {
-    try {
-      const response = await api.get(`/documents/role-recommendations?role=${encodeURIComponent(role)}`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || { message: 'Failed to get role recommendations' };
+      throw error.response?.data || { message: 'Failed to check resume' };
     }
   },
 
   // =============== UTILITY SERVICES ===============
-  
-  // Get resume templates
-  getTemplates: async () => {
-    try {
-      const response = await api.get('/documents/templates');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || { message: 'Failed to get templates' };
-    }
-  },
 
   // Get cover letter tones
   getTones: async () => {

@@ -23,28 +23,28 @@ const Navbar = () => {
 
   return (
     <nav className="navbar">
-      <a href="/dashboard" className="navbar-brand">
+      <a href="/home" className="navbar-brand">
         HireSkill
       </a>
       
       <div className="navbar-links">
+        <button
+          className="nav-link"
+          onClick={() => navigate('/home')}
+        >
+          🏠 Home
+        </button>
         <button 
           className="nav-link" 
           onClick={() => navigate('/dashboard')}
         >
-          📊 Dashboard
+          👤 Profile
         </button>
         <button 
           className="nav-link" 
           onClick={() => navigate('/career-recommendations')}
         >
           🤖 Career AI
-        </button>
-        <button 
-          className="nav-link" 
-          onClick={() => navigate('/resume-generator')}
-        >
-          📄 Resume
         </button>
         <button 
           className="nav-link" 
@@ -57,6 +57,24 @@ const Navbar = () => {
           onClick={() => navigate('/job-search')}
         >
           🔍 Jobs
+        </button>
+        <button
+          className="nav-link"
+          onClick={() => navigate('/salary-predictor')}
+        >
+          💰 Salary
+        </button>
+        <button
+          className="nav-link"
+          onClick={() => navigate('/interview-prep')}
+        >
+          🎯 Interview
+        </button>
+        <button
+          className="nav-link"
+          onClick={() => navigate('/career-path')}
+        >
+          🗺️ Career Path
         </button>
       </div>
       

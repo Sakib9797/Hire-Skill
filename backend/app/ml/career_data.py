@@ -68,6 +68,19 @@ CAREER_PATHS = [
         'growth_rate': 'Very High'
     },
     {
+        'role': 'AI Engineer',
+        'category': 'AI/ML',
+        'required_skills': [
+            'Python', 'LLMs', 'Prompt Engineering', 'LangChain', 'RAG',
+            'TensorFlow', 'PyTorch', 'NLP', 'Transformers', 'Vector Databases',
+            'FastAPI', 'Machine Learning'
+        ],
+        'optional_skills': ['Fine-tuning', 'Computer Vision', 'MLOps', 'AWS Bedrock', 'OpenAI API', 'HuggingFace'],
+        'description': 'Builds intelligent AI-powered applications and pipelines using large language models',
+        'average_salary': '$130,000 - $200,000',
+        'growth_rate': 'Very High'
+    },
+    {
         'role': 'DevOps Engineer',
         'category': 'Infrastructure',
         'required_skills': [

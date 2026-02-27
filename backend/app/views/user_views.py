@@ -12,7 +12,7 @@ user_bp = Blueprint('users', __name__)
 @cache.cached(timeout=60, key_prefix=lambda: f"profile_{get_jwt_identity()}")
 def get_profile():
     """Get current user's profile"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     
     success, result, status = UserController.get_user_profile(user_id)
     
@@ -26,7 +26,7 @@ def get_profile():
 @limiter.limit("30 per minute")
 def update_profile():
     """Update current user's profile"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     data = request.get_json()
     
     if not data:
@@ -44,7 +44,7 @@ def update_profile():
 @limiter.limit("20 per minute")
 def update_theme():
     """Update user theme preference"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     data = request.get_json()
     
     if not data or 'theme' not in data:
@@ -81,7 +81,7 @@ def get_users():
 @jwt_required()
 @role_required('admin')
 @limiter.limit("60 per minute")
-@cache.cached(timeout=60, key_prefix=lambda: f"user_{user_id}")
+@cache.cached(timeout=60, key_prefix=lambda: f"user_{request.view_args.get('user_id')}")
 def get_user_by_id(user_id):
     """Get user by ID (admin only)"""
     success, result, status = UserController.get_user_profile(user_id)

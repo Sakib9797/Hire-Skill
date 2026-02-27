@@ -43,7 +43,7 @@ def login():
 @limiter.limit("20 per minute")
 def refresh():
     """Refresh access token using refresh token"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     
     success, result, status = AuthController.refresh_access_token(user_id)
     
@@ -58,7 +58,7 @@ def refresh():
 def get_current_user():
     """Get current authenticated user info"""
     from app.models import User
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
     
     if not user:

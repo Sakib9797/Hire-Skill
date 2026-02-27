@@ -88,25 +88,23 @@ class JobController:
                 'education': profile.education if profile and profile.education else []
             }
             
-            # Get all active jobs from database
-            query = Job.query.filter_by(is_active=True)
-            
-            # Apply basic database filters for efficiency
-            if filters:
-                if filters.get('location') and filters['location'].lower() != 'any':
-                    query = query.filter(Job.location.ilike(f"%{filters['location']}%"))
-                
-                if filters.get('experience_level'):
-                    query = query.filter_by(experience_level=filters['experience_level'])
-                
-                if filters.get('work_type'):
-                    query = query.filter_by(work_type=filters['work_type'])
-                
-                if filters.get('job_type'):
-                    query = query.filter_by(job_type=filters['job_type'])
-            
-            jobs_from_db = query.all()
-            jobs_list = [job.to_dict() for job in jobs_from_db]
+            # Fetch live jobs from real-time scraper using user's role as query
+            target_role = (filters or {}).get('role') or user_data.get('target_role') or ''
+            location    = (filters or {}).get('location', '')
+            work_type   = (filters or {}).get('work_type', '')
+
+            live_jobs = JobScraper.search_jobs(
+                query=target_role,
+                location=location if location and location.lower() != 'any' else '',
+                work_type=work_type,
+                limit=150,
+            )
+            # Serialise posted_date so NLP layer gets plain dicts
+            for j in live_jobs:
+                pd = j.get('posted_date')
+                if pd and not isinstance(pd, str):
+                    j['posted_date'] = pd.isoformat()
+            jobs_list = live_jobs
             
             # Use JobMatcher for NLP-based matching
             matcher = JobMatcher()
@@ -130,66 +128,109 @@ class JobController:
             return False, f'Error matching jobs: {str(e)}', 500
     
     @staticmethod
-    def search_jobs(query: Optional[str] = None, 
+    def search_jobs(query: Optional[str] = None,
                    filters: Optional[Dict] = None,
                    limit: int = 50,
                    offset: int = 0) -> Tuple[bool, Dict, int]:
         """
-        Search jobs with filters
-        Args:
-            query: Search query
-            filters: Filter dictionary
-            limit: Results limit
-            offset: Results offset for pagination
-        Returns:
-            Tuple of (success, data/error_message, status_code)
+        Search real-time jobs from live APIs via JobScraper.
+        Results are cached in-memory for 1 hour to avoid repeated calls.
         """
         try:
-            # Start with base query
-            db_query = Job.query.filter_by(is_active=True)
-            
-            # Apply text search
-            if query:
-                db_query = db_query.filter(
-                    db.or_(
-                        Job.title.ilike(f'%{query}%'),
-                        Job.description.ilike(f'%{query}%'),
-                        Job.company.ilike(f'%{query}%')
-                    )
-                )
-            
-            # Apply filters
-            if filters:
-                if filters.get('location') and filters['location'].lower() != 'any':
-                    db_query = db_query.filter(Job.location.ilike(f"%{filters['location']}%"))
-                
-                if filters.get('experience_level'):
-                    db_query = db_query.filter_by(experience_level=filters['experience_level'])
-                
-                if filters.get('work_type'):
-                    db_query = db_query.filter_by(work_type=filters['work_type'])
-                
-                if filters.get('job_type'):
-                    db_query = db_query.filter_by(job_type=filters['job_type'])
-                
-                if filters.get('min_salary'):
-                    db_query = db_query.filter(Job.salary_min >= filters['min_salary'])
-            
-            # Get total count
-            total = db_query.count()
-            
-            # Apply pagination and get results
-            jobs = db_query.order_by(Job.posted_date.desc()).limit(limit).offset(offset).all()
-            
+            location         = (filters or {}).get('location', '')
+            experience_level = (filters or {}).get('experience_level', '')
+            work_type        = (filters or {}).get('work_type', '')
+            source_filter    = (filters or {}).get('source', '').lower()
+
+            jobs = JobScraper.search_jobs(
+                query=query or '',
+                location=location if location and location.lower() != 'any' else '',
+                experience_level=experience_level,
+                work_type=work_type,
+                limit=limit + offset,
+            )
+
+            # Optional filter by source name (LinkedIn, Indeed, RemoteOK, etc.)
+            if source_filter and source_filter != 'all':
+                jobs = [j for j in jobs
+                        if source_filter in (j.get('source') or '').lower()]
+
+            # Pagination (offset applied in-memory)
+            paginated = jobs[offset: offset + limit]
+
+            # Serialise posted_date to ISO string for JSON
+            for j in paginated:
+                pd = j.get('posted_date')
+                if pd and not isinstance(pd, str):
+                    j['posted_date'] = pd.isoformat()
+
             return True, {
-                'jobs': [job.to_dict() for job in jobs],
-                'total': total,
-                'limit': limit,
-                'offset': offset
+                'jobs':   paginated,
+                'total':  len(jobs),
+                'limit':  limit,
+                'offset': offset,
+                'source': 'live',
             }, 200
-            
+
         except Exception as e:
+            import traceback; traceback.print_exc()
             return False, f'Error searching jobs: {str(e)}', 500
+
+    @staticmethod
+    def upsert_and_save_job(user_id: int, job_data: Dict) -> Tuple[bool, Dict, int]:
+        """
+        Upsert a scraped job into the DB and create/return a saved-application record.
+        Called when the user clicks Save on a live-scraped job card.
+        """
+        try:
+            # Try to find an existing record by source_url
+            existing_job = Job.query.filter_by(
+                source_url=job_data.get('source_url', '')
+            ).first()
+
+            if not existing_job:
+                from datetime import datetime as _dt
+                posted_raw = job_data.get('posted_date')
+                posted_dt  = (_dt.fromisoformat(posted_raw)
+                              if isinstance(posted_raw, str) else None) or _dt.utcnow()
+
+                existing_job = Job(
+                    title            = job_data.get('title', 'Unknown'),
+                    company          = job_data.get('company', 'Unknown'),
+                    location         = job_data.get('location', ''),
+                    work_type        = job_data.get('work_type', ''),
+                    job_type         = job_data.get('job_type', 'Full-time'),
+                    experience_level = job_data.get('experience_level', 'Mid'),
+                    description      = job_data.get('description', ''),
+                    skills_required  = job_data.get('skills_required', []),
+                    requirements     = job_data.get('requirements', []),
+                    responsibilities = job_data.get('responsibilities', []),
+                    salary_min       = job_data.get('salary_min'),
+                    salary_max       = job_data.get('salary_max'),
+                    source           = job_data.get('source', ''),
+                    source_url       = job_data.get('source_url', ''),
+                    company_logo     = job_data.get('company_logo', ''),
+                    posted_date      = posted_dt,
+                    is_active        = True,
+                )
+                db.session.add(existing_job)
+                db.session.flush()  # get the auto-assigned int ID
+
+            # Check if already saved by this user
+            app = JobApplication.query.filter_by(
+                user_id=user_id, job_id=existing_job.id
+            ).first()
+            if app:
+                return True, {'message': 'Job already saved', 'job_id': existing_job.id}, 200
+
+            app = JobApplication(user_id=user_id, job_id=existing_job.id, status='saved')
+            db.session.add(app)
+            db.session.commit()
+            return True, {'message': 'Job saved successfully', 'job_id': existing_job.id}, 201
+
+        except Exception as e:
+            db.session.rollback()
+            return False, f'Error saving job: {str(e)}', 500
     
     @staticmethod
     def get_job(job_id: int, user_id: Optional[int] = None) -> Tuple[bool, Dict, int]:

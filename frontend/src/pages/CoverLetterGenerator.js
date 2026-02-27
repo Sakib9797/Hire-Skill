@@ -29,12 +29,21 @@ const CoverLetterGenerator = () => {
     loadCoverLetters();
   }, []);
 
+  const DEFAULT_TONES = {
+    professional:  { style: 'Professional and polished' },
+    friendly:      { style: 'Warm and conversational' },
+    formal:        { style: 'Formal and traditional' },
+    enthusiastic:  { style: 'Energetic and passionate' },
+  };
+
   const loadTones = async () => {
     try {
       const response = await documentService.getTones();
-      setTones(response.data.tones);
+      const loaded = response?.data?.tones || response?.tones;
+      setTones(loaded && Object.keys(loaded).length ? loaded : DEFAULT_TONES);
     } catch (err) {
       console.error('Error loading tones:', err);
+      setTones(DEFAULT_TONES);
     }
   };
 

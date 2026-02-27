@@ -1,10 +1,27 @@
+import os
 import psycopg2
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Extract DB password from DATABASE_URL or DB_PASSWORD env var
+def _get_db_password():
+    db_url = os.environ.get('DATABASE_URL', '')
+    if '://' in db_url:
+        # Parse password from postgresql://user:password@host:port/db
+        try:
+            creds = db_url.split('://')[1].split('@')[0]
+            if ':' in creds:
+                return creds.split(':', 1)[1]
+        except (IndexError, ValueError):
+            pass
+    return os.environ.get('DB_PASSWORD', '')
 
 try:
     conn = psycopg2.connect(
         dbname='postgres',
         user='postgres',
-        password='RODRO123456',
+        password=_get_db_password(),
         host='localhost'
     )
     conn.autocommit = True

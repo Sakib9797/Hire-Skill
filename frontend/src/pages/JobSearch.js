@@ -1,411 +1,434 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import jobService from '../services/jobService';
 import '../styles/JobSearch.css';
 
+// --- Helpers ------------------------------------------------------------------
+const timeAgo = (dateStr) => {
+  if (!dateStr) return '';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 2)   return 'just now';
+  if (m < 60)  return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24)  return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 30)  return `${d}d ago`;
+  return `${Math.floor(d / 30)}mo ago`;
+};
+
+const formatSalary = (min, max) => {
+  if (!min && !max) return null;
+  const f = (n) => n >= 1000 ? `$${(n / 1000).toFixed(0)}k` : `$${n}`;
+  if (min && max) return `${f(min)}  ${f(max)}`;
+  if (min) return `${f(min)}+`;
+  return f(max);
+};
+
+const SOURCE_COLORS = {
+  LinkedIn:    '#0077b5',
+  Indeed:      '#2164f3',
+  Glassdoor:   '#0caa41',
+  Adzuna:      '#ef4a23',
+  RemoteOK:    '#0d0d0d',
+  'The Muse':  '#5c5ce5',
+  ZipRecruiter:'#00c2a8',
+  Monster:     '#6d1e9e',
+  JSearch:     '#ff6b35',
+};
+
+const SOURCE_ICONS = {
+  LinkedIn: '', Indeed: '', Glassdoor: '', Adzuna: '',
+  RemoteOK: '', 'The Muse': '', ZipRecruiter: '', Monster: '', JSearch: '',
+};
+
+const SOURCE_TABS = ['All', 'LinkedIn', 'Indeed', 'RemoteOK', 'The Muse', 'Adzuna'];
+
+const ScoreBadge = ({ score }) => {
+  if (!score) return null;
+  const color = score >= 80 ? '#10b981' : score >= 60 ? '#3b82f6' : score >= 40 ? '#f59e0b' : '#6b7280';
+  return (
+    <span className="match-score" style={{ background: color }}>
+      {Math.round(score)}% Match
+    </span>
+  );
+};
+
+// --- Component ----------------------------------------------------------------
 const JobSearch = () => {
-  const { user } = useAuth();
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [searchMode, setSearchMode] = useState('matched'); // 'matched' or 'search'
+  useAuth(); // auth context available if needed
+  const [jobs, setJobs]           = useState([]);
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState('');
+  const [toast, setToast]         = useState('');
+  const [searchMode, setSearchMode] = useState('search');   // 'matched' | 'search'
   const [selectedJob, setSelectedJob] = useState(null);
-  const [showJobModal, setShowJobModal] = useState(false);
-  
-  // Filters
+  const [activeSource, setActiveSource] = useState('All'); // source tab
+
   const [filters, setFilters] = useState({
-    role: '',
-    location: '',
-    experience_level: '',
-    work_type: '',
-    job_type: '',
-    limit: 20
+    role: '', location: '', experience_level: '', work_type: '', job_type: '',
   });
-  
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Load matched jobs on mount
-  useEffect(() => {
-    if (searchMode === 'matched') {
-      loadMatchedJobs();
-    }
-  }, [searchMode]);
-  
-  const loadMatchedJobs = async () => {
-    setLoading(true);
-    setError('');
-    
+
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3200); };
+
+  // --- Data loading -----------------------------------------------------------
+  const loadMatchedJobs = useCallback(async () => {
+    setLoading(true); setError('');
     try {
       const data = await jobService.getMatchedJobs(filters);
       setJobs(data.jobs || []);
-      if (data.jobs && data.jobs.length === 0) {
-        setError('No matching jobs found. Try adjusting your filters.');
-      }
+      if (!data.jobs?.length) setError('No matching jobs found. Try adjusting your filters.');
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load matched jobs');
-      console.error('Error loading matched jobs:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const handleSearch = async () => {
-    setLoading(true);
-    setError('');
-    setSearchMode('search');
-    
+      setError('Could not load matched jobs. Check your profile is complete.');
+    } finally { setLoading(false); }
+  }, [filters]);
+
+  const handleSearch = useCallback(async () => {
+    setLoading(true); setError(''); setSearchMode('search');
     try {
-      const data = await jobService.searchJobs(searchQuery, filters);
+      const sourceParam = activeSource !== 'All' ? activeSource : '';
+      const data = await jobService.searchJobs(searchQuery, { ...filters, source: sourceParam });
       setJobs(data.jobs || []);
-      if (data.jobs && data.jobs.length === 0) {
-        setError('No jobs found matching your search.');
-      }
+      if (!data.jobs?.length) setError('No jobs found. Try a different search term or remove filters.');
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to search jobs');
-      console.error('Error searching jobs:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const handleFilterChange = (field, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-  
-  const handleApplyFilters = () => {
-    if (searchMode === 'matched') {
-      loadMatchedJobs();
+      setError('Search failed. The job APIs may be temporarily unavailable.');
+    } finally { setLoading(false); }
+  }, [searchQuery, filters, activeSource]);
+
+  // Run search on mount
+  useEffect(() => { handleSearch(); }, []); // eslint-disable-line
+
+  // Re-run when source tab changes
+  useEffect(() => { if (!loading) handleSearch(); }, [activeSource]); // eslint-disable-line
+
+  const handleFilterChange = (field, value) =>
+    setFilters((prev) => ({ ...prev, [field]: value }));
+
+  // --- Actions ----------------------------------------------------------------
+  const handleViewJob = (job) => setSelectedJob(job);
+
+  const openOriginalPosting = (job, e) => {
+    e?.stopPropagation();
+    if (job.source_url) {
+      window.open(job.source_url, '_blank', 'noopener,noreferrer');
     } else {
-      handleSearch();
+      showToast('No external link available for this job.');
     }
   };
-  
-  const handleJobClick = async (job) => {
-    setSelectedJob(job);
-    setShowJobModal(true);
-  };
-  
-  const handleSaveJob = async (jobId) => {
+
+  const handleSaveJob = async (job, e) => {
+    e?.stopPropagation();
     try {
-      await jobService.saveJob(jobId);
-      setSuccess('Job saved successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+      await jobService.saveExternalJob(job);
+      showToast('Job saved to your list!');
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to save job');
+      showToast(err.response?.data?.error || 'Could not save job — please log in.');
     }
   };
-  
-  const handleApplyToJob = async (jobId) => {
-    try {
-      await jobService.applyToJob(jobId);
-      setSuccess('Application submitted successfully!');
-      setTimeout(() => setSuccess(''), 3000);
-      setShowJobModal(false);
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to apply to job');
-    }
-  };
-  
-  const formatSalary = (min, max) => {
-    if (!min && !max) return 'Not specified';
-    const formatNum = (num) => {
-      if (num >= 1000) return `$${(num / 1000).toFixed(0)}k`;
-      return `$${num}`;
-    };
-    if (min && max) return `${formatNum(min)} - ${formatNum(max)}`;
-    if (min) return `${formatNum(min)}+`;
-    return formatNum(max);
-  };
-  
-  const getMatchScoreColor = (score) => {
-    if (score >= 80) return '#10b981';
-    if (score >= 60) return '#3b82f6';
-    if (score >= 40) return '#f59e0b';
-    return '#6b7280';
-  };
-  
+
+  // --- Filtered job list ------------------------------------------------------
+  const visibleJobs = activeSource === 'All'
+    ? jobs
+    : jobs.filter((j) => (j.source || '').toLowerCase() === activeSource.toLowerCase());
+
+  // --- Render -----------------------------------------------------------------
   return (
-    <div className="job-search-container">
-      <div className="job-search-header">
-        <h1>🔍 Job Search & Matching</h1>
-        <p>Find your perfect job opportunity</p>
-      </div>
-      
-      {/* Mode Toggle */}
-      <div className="mode-toggle">
-        <button
-          className={searchMode === 'matched' ? 'active' : ''}
-          onClick={() => setSearchMode('matched')}
-        >
-          ✨ Matched For You
-        </button>
-        <button
-          className={searchMode === 'search' ? 'active' : ''}
-          onClick={() => setSearchMode('search')}
-        >
-          🔎 Search All Jobs
-        </button>
-      </div>
-      
-      {/* Search Bar */}
-      <div className="search-section">
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Search by title, company, or keywords..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-          />
-          <button onClick={handleSearch} className="search-btn">
-            Search
+    <>
+      <Navbar />
+      <div className="job-search-container">
+
+        {/* Header */}
+        <div className="job-search-header">
+          <h1>Live Job Search</h1>
+          <p>Real-time postings from LinkedIn, Indeed, RemoteOK, The Muse &amp; more</p>
+        </div>
+
+        {/* Mode toggle */}
+        <div className="mode-toggle">
+          <button className={searchMode === 'matched' ? 'active' : ''}
+                  onClick={() => { setSearchMode('matched'); loadMatchedJobs(); }}>
+            ✨ Matched For Me
+          </button>
+          <button className={searchMode === 'search' ? 'active' : ''}
+                  onClick={() => setSearchMode('search')}>
+            🔎 Search All Jobs
           </button>
         </div>
-        
-        {/* Filters */}
-        <div className="filters-section">
-          <div className="filter-group">
-            <label>Role</label>
+
+        {/* Search bar */}
+        <div className="search-section">
+          <div className="search-bar">
             <input
               type="text"
-              placeholder="e.g., Software Engineer"
-              value={filters.role}
-              onChange={(e) => handleFilterChange('role', e.target.value)}
+              placeholder="Search title, skill, or company…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
+            <button onClick={handleSearch} className="search-btn" disabled={loading}>
+              {loading ? '…' : 'Search'}
+            </button>
           </div>
-          
-          <div className="filter-group">
-            <label>Location</label>
-            <select
-              value={filters.location}
-              onChange={(e) => handleFilterChange('location', e.target.value)}
+
+          {/* Filters */}
+          <div className="filters-section">
+            <div className="filter-group">
+              <label>Role</label>
+              <input type="text" placeholder="e.g. Software Engineer"
+                     value={filters.role}
+                     onChange={(e) => handleFilterChange('role', e.target.value)} />
+            </div>
+            <div className="filter-group">
+              <label>Location</label>
+              <select value={filters.location} onChange={(e) => handleFilterChange('location', e.target.value)}>
+                <option value="">Any Location</option>
+                <option value="Remote">Remote</option>
+                <option value="San Francisco">San Francisco</option>
+                <option value="New York">New York</option>
+                <option value="Seattle">Seattle</option>
+                <option value="Austin">Austin</option>
+                <option value="London">London</option>
+                <option value="Berlin">Berlin</option>
+              </select>
+            </div>
+            <div className="filter-group">
+              <label>Experience</label>
+              <select value={filters.experience_level}
+                      onChange={(e) => handleFilterChange('experience_level', e.target.value)}>
+                <option value="">Any Level</option>
+                <option value="Entry">Entry Level</option>
+                <option value="Mid">Mid Level</option>
+                <option value="Senior">Senior Level</option>
+                <option value="Lead">Lead / Staff</option>
+              </select>
+            </div>
+            <div className="filter-group">
+              <label>Work Type</label>
+              <select value={filters.work_type}
+                      onChange={(e) => handleFilterChange('work_type', e.target.value)}>
+                <option value="">Any Type</option>
+                <option value="Remote">Remote</option>
+                <option value="Hybrid">Hybrid</option>
+                <option value="On-site">On-site</option>
+              </select>
+            </div>
+            <button onClick={handleSearch} className="apply-filters-btn" disabled={loading}>
+              Apply Filters
+            </button>
+          </div>
+        </div>
+
+        {/* Source tabs */}
+        <div className="source-tabs">
+          {SOURCE_TABS.map((src) => (
+            <button
+              key={src}
+              className={`source-tab ${activeSource === src ? 'active' : ''}`}
+              style={activeSource === src && src !== 'All'
+                ? { borderColor: SOURCE_COLORS[src], color: SOURCE_COLORS[src] }
+                : {}}
+              onClick={() => setActiveSource(src)}
             >
-              <option value="">Any Location</option>
-              <option value="Remote">Remote</option>
-              <option value="San Francisco">San Francisco, CA</option>
-              <option value="New York">New York, NY</option>
-              <option value="Seattle">Seattle, WA</option>
-              <option value="Austin">Austin, TX</option>
-              <option value="Boston">Boston, MA</option>
-            </select>
+              {src !== 'All' && SOURCE_ICONS[src]} {src}
+            </button>
+          ))}
+        </div>
+
+        {/* Messages */}
+        {error && <div className="error-message">{error}</div>}
+
+        {/* Loading / Grid */}
+        {loading ? (
+          <div className="loading-spinner">
+            <span className="spinner-ring" />
+            Fetching live jobs…
           </div>
-          
-          <div className="filter-group">
-            <label>Experience</label>
-            <select
-              value={filters.experience_level}
-              onChange={(e) => handleFilterChange('experience_level', e.target.value)}
-            >
-              <option value="">Any Level</option>
-              <option value="Entry">Entry Level</option>
-              <option value="Mid">Mid Level</option>
-              <option value="Senior">Senior Level</option>
-              <option value="Lead">Lead</option>
-            </select>
-          </div>
-          
-          <div className="filter-group">
-            <label>Work Type</label>
-            <select
-              value={filters.work_type}
-              onChange={(e) => handleFilterChange('work_type', e.target.value)}
-            >
-              <option value="">Any Type</option>
-              <option value="Remote">Remote</option>
-              <option value="Hybrid">Hybrid</option>
-              <option value="On-site">On-site</option>
-            </select>
-          </div>
-          
-          <div className="filter-group">
-            <label>Job Type</label>
-            <select
-              value={filters.job_type}
-              onChange={(e) => handleFilterChange('job_type', e.target.value)}
-            >
-              <option value="">Any Type</option>
-              <option value="Full-time">Full-time</option>
-              <option value="Part-time">Part-time</option>
-              <option value="Contract">Contract</option>
-            </select>
-          </div>
-          
-          <button onClick={handleApplyFilters} className="apply-filters-btn">
-            Apply Filters
+        ) : (
+          <>
+            <p className="results-count">
+              {visibleJobs.length} job{visibleJobs.length !== 1 ? 's' : ''} found
+              {activeSource !== 'All' && ` on ${activeSource}`}
+            </p>
+            <div className="jobs-grid">
+              {visibleJobs.map((job) => (
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  onView={handleViewJob}
+                  onOpen={openOriginalPosting}
+                  onSave={handleSaveJob}
+                />
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Job detail modal */}
+        {selectedJob && (
+          <JobModal
+            job={selectedJob}
+            onClose={() => setSelectedJob(null)}
+            onOpen={openOriginalPosting}
+            onSave={handleSaveJob}
+          />
+        )}
+
+        {/* Toast */}
+        {toast && <div className="toast">{toast}</div>}
+      </div>
+    </>
+  );
+};
+
+// --- Sub-components -----------------------------------------------------------
+const JobCard = ({ job, onView, onOpen, onSave }) => {
+  const salary  = formatSalary(job.salary_min, job.salary_max) || job.salary;
+  const srcColor = SOURCE_COLORS[job.source] || '#6b7280';
+
+  return (
+    <div className="job-card" onClick={() => onView(job)}>
+      <div className="job-card-header">
+        {job.company_logo ? (
+          <img src={job.company_logo} alt={job.company} className="company-logo"
+               onError={(e) => { e.target.style.display = 'none'; }} />
+        ) : (
+          <div className="company-logo-placeholder">{(job.company || '?')[0].toUpperCase()}</div>
+        )}
+        <div className="job-card-title-section">
+          <h3>{job.title}</h3>
+          <p className="company-name">{job.company}</p>
+        </div>
+        <ScoreBadge score={job.match_score} />
+      </div>
+
+      <div className="job-card-details">
+        <span className="job-detail"> {job.location}</span>
+        <span className="job-detail"> {job.work_type}</span>
+        {salary && <span className="job-detail"> {salary}</span>}
+        {job.posted_date && <span className="job-detail posted-time"> {timeAgo(job.posted_date)}</span>}
+      </div>
+
+      {job.skills_required?.length > 0 && (
+        <div className="job-skills">
+          {job.skills_required.slice(0, 4).map((s, i) => (
+            <span key={i} className="skill-badge">{s}</span>
+          ))}
+          {job.skills_required.length > 4 && (
+            <span className="skill-badge skill-more">+{job.skills_required.length - 4}</span>
+          )}
+        </div>
+      )}
+
+      <div className="job-card-footer">
+        <span className="source-badge" style={{ color: srcColor, borderColor: srcColor }}>
+          {SOURCE_ICONS[job.source] || ''} {job.source || 'External'}
+        </span>
+        <div className="card-actions">
+          <button className="save-btn" title="Save job"
+                  onClick={(e) => onSave(job, e)}>
+             Save
+          </button>
+          <button className="view-btn" style={{ background: srcColor }}
+                  onClick={(e) => onOpen(job, e)}>
+            View 
           </button>
         </div>
       </div>
-      
-      {/* Messages */}
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">{success}</div>}
-      
-      {/* Job Listings */}
-      {loading ? (
-        <div className="loading-spinner">Loading jobs...</div>
-      ) : (
-        <div className="jobs-grid">
-          {jobs.map((job) => (
-            <div key={job.id} className="job-card" onClick={() => handleJobClick(job)}>
-              <div className="job-card-header">
-                {job.company_logo && (
-                  <img src={job.company_logo} alt={job.company} className="company-logo" />
-                )}
-                <div className="job-card-title-section">
-                  <h3>{job.title}</h3>
-                  <p className="company-name">{job.company}</p>
-                </div>
-                {job.match_score && (
-                  <div 
-                    className="match-score"
-                    style={{ backgroundColor: getMatchScoreColor(job.match_score) }}
-                  >
-                    {job.match_score}% Match
-                  </div>
-                )}
-              </div>
-              
-              <div className="job-card-details">
-                <span className="job-detail">📍 {job.location}</span>
-                <span className="job-detail">💼 {job.experience_level}</span>
-                <span className="job-detail">🏢 {job.work_type}</span>
-                <span className="job-detail">💰 {formatSalary(job.salary_min, job.salary_max)}</span>
-              </div>
-              
-              <div className="job-skills">
-                {job.skills_required && job.skills_required.slice(0, 5).map((skill, idx) => (
-                  <span key={idx} className="skill-badge">{skill}</span>
-                ))}
-                {job.skills_required && job.skills_required.length > 5 && (
-                  <span className="skill-badge">+{job.skills_required.length - 5} more</span>
-                )}
-              </div>
-              
-              <div className="job-card-footer">
-                <button 
-                  className="save-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSaveJob(job.id);
-                  }}
-                >
-                  💾 Save
-                </button>
-                <button 
-                  className="apply-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleApplyToJob(job.id);
-                  }}
-                >
-                  Apply Now
-                </button>
-              </div>
+    </div>
+  );
+};
+
+const JobModal = ({ job, onClose, onOpen, onSave }) => {
+  const salary   = formatSalary(job.salary_min, job.salary_max) || job.salary;
+  const srcColor = SOURCE_COLORS[job.source] || '#6b7280';
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>×</button>
+
+        <div className="modal-header">
+          {job.company_logo ? (
+            <img src={job.company_logo} alt={job.company} className="company-logo-large"
+                 onError={(e) => { e.target.style.display = 'none'; }} />
+          ) : (
+            <div className="company-logo-placeholder large">
+              {(job.company || '?')[0].toUpperCase()}
             </div>
-          ))}
-        </div>
-      )}
-      
-      {/* Job Detail Modal */}
-      {showJobModal && selectedJob && (
-        <div className="modal-overlay" onClick={() => setShowJobModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowJobModal(false)}>×</button>
-            
-            <div className="modal-header">
-              {selectedJob.company_logo && (
-                <img src={selectedJob.company_logo} alt={selectedJob.company} className="company-logo-large" />
-              )}
-              <div>
-                <h2>{selectedJob.title}</h2>
-                <p className="company-name-large">{selectedJob.company}</p>
-              </div>
-            </div>
-            
-            <div className="modal-details">
-              <span>📍 {selectedJob.location}</span>
-              <span>💼 {selectedJob.experience_level}</span>
-              <span>🏢 {selectedJob.work_type}</span>
-              <span>🕒 {selectedJob.job_type}</span>
-              <span>💰 {formatSalary(selectedJob.salary_min, selectedJob.salary_max)}</span>
-            </div>
-            
-            {selectedJob.match_score && (
-              <div className="match-score-section">
-                <strong>Match Score:</strong>
-                <div 
-                  className="match-score-large"
-                  style={{ backgroundColor: getMatchScoreColor(selectedJob.match_score) }}
-                >
-                  {selectedJob.match_score}% Match
-                </div>
-              </div>
-            )}
-            
-            <div className="modal-section">
-              <h3>About the Role</h3>
-              <p className="job-description">{selectedJob.description}</p>
-            </div>
-            
-            {selectedJob.responsibilities && selectedJob.responsibilities.length > 0 && (
-              <div className="modal-section">
-                <h3>Responsibilities</h3>
-                <ul>
-                  {selectedJob.responsibilities.map((resp, idx) => (
-                    <li key={idx}>{resp}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            {selectedJob.requirements && selectedJob.requirements.length > 0 && (
-              <div className="modal-section">
-                <h3>Requirements</h3>
-                <ul>
-                  {selectedJob.requirements.map((req, idx) => (
-                    <li key={idx}>{req}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            {selectedJob.skills_required && selectedJob.skills_required.length > 0 && (
-              <div className="modal-section">
-                <h3>Required Skills</h3>
-                <div className="job-skills">
-                  {selectedJob.skills_required.map((skill, idx) => (
-                    <span key={idx} className="skill-badge">{skill}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {selectedJob.benefits && selectedJob.benefits.length > 0 && (
-              <div className="modal-section">
-                <h3>Benefits</h3>
-                <ul>
-                  {selectedJob.benefits.map((benefit, idx) => (
-                    <li key={idx}>{benefit}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            <div className="modal-actions">
-              <button onClick={() => handleSaveJob(selectedJob.id)} className="save-btn-large">
-                💾 Save Job
-              </button>
-              <button onClick={() => handleApplyToJob(selectedJob.id)} className="apply-btn-large">
-                Apply Now
-              </button>
-            </div>
+          )}
+          <div>
+            <h2>{job.title}</h2>
+            <p className="company-name-large">{job.company}</p>
           </div>
         </div>
-      )}
+
+        <div className="modal-details">
+          <span> {job.location}</span>
+          <span> {job.work_type}</span>
+          {job.job_type && <span> {job.job_type}</span>}
+          {job.experience_level && <span> {job.experience_level}</span>}
+          {salary && <span> {salary}</span>}
+          {job.posted_date && <span> Posted {timeAgo(job.posted_date)}</span>}
+        </div>
+
+        {job.match_score && (
+          <div className="match-score-section">
+            <ScoreBadge score={job.match_score} />
+            <span style={{ marginLeft: 8, color: '#6b7280' }}>profile match</span>
+          </div>
+        )}
+
+        {job.description && (
+          <div className="modal-section">
+            <h3>About the Role</h3>
+            <p className="job-description">{job.description}</p>
+          </div>
+        )}
+
+        {job.responsibilities?.length > 0 && (
+          <div className="modal-section">
+            <h3>Responsibilities</h3>
+            <ul>{job.responsibilities.map((r, i) => <li key={i}>{r}</li>)}</ul>
+          </div>
+        )}
+
+        {job.requirements?.length > 0 && (
+          <div className="modal-section">
+            <h3>Requirements</h3>
+            <ul>{job.requirements.map((r, i) => <li key={i}>{r}</li>)}</ul>
+          </div>
+        )}
+
+        {job.skills_required?.length > 0 && (
+          <div className="modal-section">
+            <h3>Required Skills</h3>
+            <div className="job-skills">
+              {job.skills_required.map((s, i) => (
+                <span key={i} className="skill-badge">{s}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {job.benefits?.length > 0 && (
+          <div className="modal-section">
+            <h3>Benefits</h3>
+            <ul>{job.benefits.map((b, i) => <li key={i}>{b}</li>)}</ul>
+          </div>
+        )}
+
+        <div className="modal-actions">
+          <button className="save-btn-large" onClick={(e) => onSave(job, e)}>
+             Save Job
+          </button>
+          <button className="view-btn-large" style={{ background: srcColor }}
+                  onClick={(e) => onOpen(job, e)}>
+            {SOURCE_ICONS[job.source] || ''} View on {job.source || 'Job Site'} 
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

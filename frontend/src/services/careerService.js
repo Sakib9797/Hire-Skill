@@ -7,7 +7,13 @@ const careerService = {
       const response = await api.get(`/career/recommend?top_n=${topN}`);
       return response.data;
     } catch (error) {
-      throw error.response?.data || { message: 'Failed to get recommendations' };
+      const errData = error.response?.data;
+      const msg = errData
+        ? (errData.message || errData.msg || 'Failed to get recommendations')
+        : (error.message || 'Failed to get recommendations');
+      const err = new Error(msg);
+      if (errData) Object.assign(err, errData);
+      throw err;
     }
   },
 
