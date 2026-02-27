@@ -28,10 +28,10 @@ try:
     cur = conn.cursor()
     
     try:
-        cur.execute('CREATE DATABASE hireskill_db')
-        print('✓ Database hireskill_db created successfully!')
+        cur.execute('CREATE DATABASE hireskillz_db')
+        print('✓ Database hireskillz_db created successfully!')
     except psycopg2.errors.DuplicateDatabase:
-        print('✓ Database hireskill_db already exists!')
+        print('✓ Database hireskillz_db already exists!')
     
     cur.close()
     conn.close()

@@ -117,7 +117,7 @@ const Register = () => {
       <div className="auth-card">
         <div className="auth-header">
           <h1>Create Account</h1>
-          <p>Join HireSkill and connect with opportunities</p>
+          <p>Join HireSkillz and connect with opportunities</p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>

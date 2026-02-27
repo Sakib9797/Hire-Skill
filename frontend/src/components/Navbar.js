@@ -24,7 +24,7 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <a href="/home" className="navbar-brand">
-        HireSkill
+        HireSkillz
       </a>
       
       <div className="navbar-links">

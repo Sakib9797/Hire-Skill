@@ -89,7 +89,7 @@ def create_app(config_name='default'):
     # Health check route
     @app.route('/api/health')
     def health_check():
-        return {'status': 'healthy', 'message': 'HireSkill API is running'}, 200
+        return {'status': 'healthy', 'message': 'HireSkillz API is running'}, 200
 
-    logger.info('HireSkill app created (config=%s)', config_name)
+    logger.info('HireSkillz app created (config=%s)', config_name)
     return app

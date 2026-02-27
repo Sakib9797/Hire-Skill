@@ -54,7 +54,7 @@ const Home = () => {
             <span className="ld-hero__gradient">With Intelligent Tools</span>
           </h1>
           <p className="ld-hero__sub">
-            From smart job search to AI cover letters, salary predictions, and interview prep — HireSkill equips you with everything to accelerate your career.
+            From smart job search to AI cover letters, salary predictions, and interview prep — HireSkillz equips you with everything to accelerate your career.
           </p>
           <div className="ld-hero__btns">
             <Link to="/register" className="ld-btn ld-btn--primary">
@@ -94,7 +94,7 @@ const Home = () => {
       {/* ── CTA ── */}
       <section className="ld-cta">
         <h2 className="ld-cta__title">Ready to Transform Your Career?</h2>
-        <p className="ld-cta__sub">Join HireSkill today — it's free, fast, and powered by AI.</p>
+        <p className="ld-cta__sub">Join HireSkillz today — it's free, fast, and powered by AI.</p>
         <Link to="/register" className="ld-btn ld-btn--primary ld-btn--lg">
           Create Free Account
         </Link>
@@ -102,7 +102,7 @@ const Home = () => {
 
       {/* ── FOOTER ── */}
       <footer className="ld-footer">
-        <span className="ld-footer__brand">HireSkill</span>
+        <span className="ld-footer__brand">HireSkillz</span>
         <span className="ld-footer__dot">·</span>
         <span>AI-powered career companion</span>
       </footer>

@@ -389,7 +389,7 @@ const HomePage = () => {
 
       {/* ── FOOTER ── */}
       <footer className="hp-footer">
-        <span className="hp-footer__brand">HireSkill</span>
+        <span className="hp-footer__brand">HireSkillz</span>
         <span className="hp-footer__dot">·</span>
         <span>Your AI-powered career companion</span>
       </footer>

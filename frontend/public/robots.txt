@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://hireskill.vercel.app/sitemap.xml
+Sitemap: https://hireskillz.vercel.app/sitemap.xml

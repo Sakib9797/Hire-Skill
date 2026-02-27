@@ -1,5 +1,5 @@
 """
-Pytest configuration — shared fixtures for the HireSkill test suite.
+Pytest configuration — shared fixtures for the HireSkillz test suite.
 """
 import os
 import pytest

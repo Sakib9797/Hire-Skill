@@ -1,4 +1,4 @@
-# Contributing to HireSkill
+# Contributing to HireSkillz
 
 Thanks for your interest in contributing! Here's how to get started.
 
@@ -6,8 +6,8 @@ Thanks for your interest in contributing! Here's how to get started.
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/Hire-Skill.git
-   cd Hire-Skill
+   git clone https://github.com/YOUR_USERNAME/Hire-Skillz.git
+   cd Hire-Skillz
    ```
 
 2. **Backend**

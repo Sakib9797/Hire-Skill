@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/Docker-Ready-blue?style=for-the-badge&logo=docker&logoColor=white" />
 </p>
 
-# HireSkill — AI-Powered Career Platform
+# HireSkillz — AI-Powered Career Platform
 
 > A full-stack career management platform with AI-powered tools for job search, resume analysis, salary prediction, interview preparation, career recommendations, and more — built with Flask, React, and PostgreSQL.
 
@@ -150,7 +150,7 @@ docker-compose up --build
 ## Project Structure
 
 ```
-HireSkill/
+HireSkillz/
 ├── backend/
 │   ├── app/
 │   │   ├── __init__.py              # App factory, CORS, security headers
@@ -186,7 +186,7 @@ HireSkill/
 │   └── requirements.txt
 ├── frontend/
 │   ├── public/
-│   │   ├── favicon.ico             # Custom HireSkill icon
+│   │   ├── favicon.ico             # Custom HireSkillz icon
 │   │   ├── logo192.png / logo512.png
 │   │   └── robots.txt
 │   ├── src/

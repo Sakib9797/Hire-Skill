@@ -89,21 +89,21 @@ def seed_test_data():
         
         test_users = [
             {
-                'email': 'admin@hireskill.com',
+                'email': 'admin@hireskillz.com',
                 'password': 'Admin123',
                 'first_name': 'Admin',
                 'last_name': 'User',
                 'role': UserRole.ADMIN.value
             },
             {
-                'email': 'candidate@hireskill.com',
+                'email': 'candidate@hireskillz.com',
                 'password': 'Candidate123',
                 'first_name': 'Jane',
                 'last_name': 'Candidate',
                 'role': UserRole.CANDIDATE.value
             },
             {
-                'email': 'employer@hireskill.com',
+                'email': 'employer@hireskillz.com',
                 'password': 'Employer123',
                 'first_name': 'Company',
                 'last_name': 'Recruiter',
@@ -134,7 +134,7 @@ def seed_test_data():
                 # Create profile with sample data
                 profile = UserProfile(
                     user_id=user.id,
-                    bio=f"{user_data['first_name']} is a {user_data['role']} on HireSkill",
+                    bio=f"{user_data['first_name']} is a {user_data['role']} on HireSkillz",
                     skills=['Python', 'JavaScript', 'SQL'],
                     interests=['Technology', 'Innovation'],
                     theme_preference='light'
@@ -157,7 +157,7 @@ def seed_test_data():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("HireSkill Database Management")
+    print("HireSkillz Database Management")
     print("=" * 50)
     print("\nOptions:")
     print("1. Initialize database (create tables)")

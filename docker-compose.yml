@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: hireskill_db
+      POSTGRES_DB: hireskillz_db
     ports:
       - "5432:5432"
     volumes:
@@ -21,7 +21,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/hireskill_db
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/hireskillz_db
       FLASK_ENV: production
     depends_on:
       - db

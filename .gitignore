@@ -1,4 +1,4 @@
-# Root .gitignore for HireSkill project
+# Root .gitignore for HireSkillz project
 
 # Documentation files (exclude all .md files except key docs)
 *.md
